@@ -4,12 +4,13 @@ from pandas import DataFrame, Series
 from elasticsearch.client import Elasticsearch
 from elasticsearch.helpers import scan
 from typing import Iterable, Any, cast
+from itertools import islice
 
 DEFAULT_FILTER_PATH = 'took,hits.hits._id,hits.hits._source,_scroll_id,_shards'
 
-class AssignScanResult[T:(Series, DataFrame)](AssigningStep[T]):
+class ScanToDataFrame[T:(Series, DataFrame)](AssigningStep[T]):
     """ assign the result of an ElasticSearch index scan to a context """
-    def __init__(self, assign_to:Reference[T], elasticsearch:Elasticsearch, index:str, source:str|list[str]|bool|None, query:dict[str, Any]|None=None, dtypes:dict[str, Any]|None=None, keep_columns:list[str]|None=None, size:int=10_000, filter_path:str|None=DEFAULT_FILTER_PATH):
+    def __init__(self, assign_to:Reference[T], elasticsearch:Elasticsearch, index:str, source:str|list[str]|bool|None, query:dict[str, Any]|None=None, dtypes:dict[str, Any]|None=None, keep_columns:list[str]|None=None, *, limit:int|None=None, size:int=1000, filter_path:str|None=DEFAULT_FILTER_PATH):
         super().__init__(assign_to)
         self.elasticsearch = elasticsearch
         self.index = index
@@ -19,6 +20,7 @@ class AssignScanResult[T:(Series, DataFrame)](AssigningStep[T]):
         self.dtypes = dtypes
         self.keep_columns = keep_columns
         self.filter_path = filter_path
+        self.limit = limit
        
 
     def scan(self) -> Iterable[dict]:
@@ -33,17 +35,24 @@ class AssignScanResult[T:(Series, DataFrame)](AssigningStep[T]):
         
 
     @staticmethod
-    def hits_to_dataframe(hits:Iterable[dict], dtypes:dict[str,Any]|None=None, columns:list[str]|None=None):
+    def hits_to_dataframe(hits:Iterable[dict], dtypes:dict[str,Any]|None=None, columns:list[str]|None=None, limit:int|None=None):
         # build an `_id`-indexed dataframe from the `hits` iterator
-        df:DataFrame = DataFrame.from_records(hits, index='_id', columns=['_source', 'fields'])
+        df:DataFrame = DataFrame.from_records(
+            islice(hits, limit), 
+            index='_id', 
+            columns=['_id', 'index', '_source', 'fields']
+        )
+
         if df.empty:
             print('`df` is empty, returning an empty DataFrame')
             return DataFrame()
 
         # unnest `_source` and `fields`
         for col in ('_source', 'fields'):
-            if col not in df.columns:
-                continue    
+            print(col)
+            if col not in df.columns or df[col].isna().all():
+                continue
+            print(df[col])
             col_df = DataFrame.from_records(df[col].values, df.index)
             col_df = col_df[col_df.columns.difference(df.columns)]
             df = df.join(col_df, how='left').drop(col, axis=1)
@@ -100,6 +109,6 @@ class AssignScanResult[T:(Series, DataFrame)](AssigningStep[T]):
 
     def generate(self) -> T:
         hits = self.scan()
-        result = AssignScanResult.hits_to_dataframe(hits, self.dtypes, self.keep_columns)
+        result = ScanToDataFrame.hits_to_dataframe(hits, self.dtypes, self.keep_columns, self.limit)
         result = self.handle_empty_result(result)
         return self.transform_result(result)

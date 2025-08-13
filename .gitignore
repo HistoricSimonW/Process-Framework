@@ -1,6 +1,7 @@
 ### implementation ###
-secrets/
-
+# ignore everything in secrets apart from readme.txt
+secrets/*
+!secrets/readme.txt
 
 ### https://github.com/github/gitignore/blob/main/Python.gitignore ###
 

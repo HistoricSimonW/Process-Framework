@@ -5,18 +5,20 @@ from pandas import DataFrame, Series
 from typing import Any, Type
 
 
-class DocumentsFromDataframe[T:Document](TransformingStep[DataFrame, Series]):
-    def __init__(self, subject: Reference[DataFrame], assign_to: Reference[Series], _type:type):
+class DataFrameToDocuments[T:Document](TransformingStep[DataFrame, Series]):
+    def __init__(self, subject: Reference[DataFrame], assign_to: Reference[Series], document_type:type):
         super().__init__(subject, assign_to)
-        self.cls:Type[T] = _type
+        self.document_type:Type[T] = document_type
 
 
     def transform(self, subject: DataFrame) -> Series | None:
         df = subject.copy()
         
+        # if the df has a named index, get its levels as columns
         if all(df.index.names):
             for i, n in enumerate(df.index.names):
                 df[n] = df.index.get_level_values(i)
 
-        return df.apply(lambda row: self.cls(**row.to_dict()), axis=1)
+        # construct documents by passing each row (axis=1) of the dataframe to the `document_type` constructor
+        return df.apply(lambda row: self.document_type(**row.to_dict()), axis=1)
 

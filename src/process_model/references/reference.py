@@ -34,6 +34,6 @@ class Reference[T]:
         if throw_on_none and self.value is None:
             raise ValueError(f'{self} has a None value')
         return self.value
-
+    
     def __repr__(self):
         return f"Reference[{self._type.__name__}]({self.value!r})"
