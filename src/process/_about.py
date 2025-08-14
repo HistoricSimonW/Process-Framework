@@ -20,14 +20,6 @@ def get_dist_name() -> str:
     return (metadata.packages_distributions().get(top_package, [top_package]) or [top_package])[0]
 
 
-def get_app_name() -> str:
-    """ get the name of the running app """
-    try:
-        return metadata.distribution(get_dist_name()).metadata["Name"]
-    except metadata.PackageNotFoundError:
-        return 'package-not-found'
-
-
 def safe_version(dist: str) -> str:
     """ get the version of a distribution, returning "0" if it is unavailable """
     try:
@@ -41,12 +33,20 @@ def get_process_model_version() -> str:
     return safe_version("process_model")
 
 
+# def get_app_name() -> str:
+#     """ get the name of the running app """
+#     try:
+#         return metadata.distribution(get_dist_name()).metadata["Name"]
+#     except metadata.PackageNotFoundError:
+#         return 'package-not-found'
+
+
+# __app_name__ = get_app_name()
 __app_version__ = get_app_version()
-__app_name__ = get_app_name()
 __process_model_version__ = get_process_model_version()
 
 
 if __name__ == '__main__':
+    # print(__app_name__)
     print(__app_version__)
-    print(__app_name__)
     print(__process_model_version__)

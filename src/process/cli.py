@@ -3,7 +3,7 @@ import argparse, os, sys, json
 from importlib.metadata import version as pkg_version
 from .settings import Settings
 from .pipeline import PipelineBuilder
-from ._about import __app_name__, __app_version__
+from ._about import __app_version__, __process_model_version__
 
 from process_model.pipeline.metadata import RunMetadata
 
@@ -18,9 +18,9 @@ def main(argv: list[str] | None = None) -> int:
     pipeline_builder = PipelineBuilder(print)
 
     meta = RunMetadata(
-        process=__app_name__,
+        process=pipeline_builder.get_name(),
         process_version=__app_version__,
-        process_model_version=safe_version("process_model")
+        process_model_version=__process_model_version__
     )
 
     pipeline = pipeline_builder.build_pipeline(settings, meta)

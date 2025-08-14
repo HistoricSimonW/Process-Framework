@@ -4,7 +4,7 @@ from process_model.pipeline import RunMetadata, SettingsBase, PipelineBuilderBas
 class PipelineBuilder(PipelineBuilderBase):
 
     def get_name(self) -> str:
-        return "test!"
+        raise NotImplementedError()
 
     def build_process(self, settings: SettingsBase, metadata: RunMetadata) -> Callable[..., Any]:
-        return lambda : print("ok!")
+        raise NotImplementedError()
