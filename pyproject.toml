@@ -1,28 +1,34 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "process_model"
-version = '2025.07.04'
+dynamic = ["version"]
+requires-python = ">=3.12"
 authors = [
     {name = "Simon Wilson", email = "simon.wilson@historicengland.org.uk"},
 ]
 
 dependencies = [
-    "elasticsearch<9.0",
-    "pandas",
-    "pydantic",
-    "requests"
+    "elasticsearch>=8.13,<9.0",
+    "pandas>=2.2,<3",
+    "pydantic>=2.6,<3",
+    "requests>=2.31,<3"
 ]
 
 [project.optional-dependencies]
-sql=["sqlalchemy", "pyodbc", "pandas"]
-elasticsearch=["elasticsearch"]
+sql=["sqlalchemy", "pyodbc"]
 geo=["geopandas"]
 
 [tool.setuptools]
 include-package-data = false
 
+[tool.setuptools.package-dir]
+"" = "src"
+
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools_scm]
+write_to = "src/process_model/_version.py"
