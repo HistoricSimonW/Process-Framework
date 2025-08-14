@@ -6,7 +6,7 @@ from elasticsearch.helpers import scan
 from typing import Iterable, Any, cast
 from itertools import islice
 
-DEFAULT_FILTER_PATH = 'took,hits.hits._id,hits.hits._source,_scroll_id,_shards'
+DEFAULT_FILTER_PATH = 'index,took,hits.hits._id,hits.hits._source,_scroll_id,_shards'
 
 class ScanToDataFrame[T:(Series, DataFrame)](AssigningStep[T]):
     """ assign the result of an ElasticSearch index scan to a context """
@@ -40,19 +40,23 @@ class ScanToDataFrame[T:(Series, DataFrame)](AssigningStep[T]):
         df:DataFrame = DataFrame.from_records(
             islice(hits, limit), 
             index='_id', 
-            columns=['_id', 'index', '_source', 'fields']
+            columns=['_id', '_index', '_source', '_fields']
         )
 
         if df.empty:
             print('`df` is empty, returning an empty DataFrame')
             return DataFrame()
 
-        # unnest `_source` and `fields`
-        for col in ('_source', 'fields'):
-            print(col)
-            if col not in df.columns or df[col].isna().all():
+        # unnest `_source` and `fields`, drop (plus column "index") if NA
+        for col in ('_source', '_fields', '_index'):
+
+            if (col not in df.columns):
                 continue
-            print(df[col])
+            
+            if (df[col].isna().all()):
+                df = df.drop(col, axis=1)
+                continue
+
             col_df = DataFrame.from_records(df[col].values, df.index)
             col_df = col_df[col_df.columns.difference(df.columns)]
             df = df.join(col_df, how='left').drop(col, axis=1)

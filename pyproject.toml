@@ -9,6 +9,18 @@ authors = [
     {name = "Simon Wilson", email = "simon.wilson@historicengland.org.uk"},
 ]
 
+dependencies = [
+    "elasticsearch<9.0",
+    "pandas",
+    "pydantic",
+    "requests"
+]
+
+[project.optional-dependencies]
+sql=["sqlalchemy", "pyodbc", "pandas"]
+elasticsearch=["elasticsearch"]
+geo=["geopandas"]
+
 [tool.setuptools]
 include-package-data = false
 

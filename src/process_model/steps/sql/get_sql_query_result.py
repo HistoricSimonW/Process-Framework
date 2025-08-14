@@ -3,14 +3,37 @@ from ...references.reference import Reference
 from pandas import DataFrame, Series
 from abc import ABC, abstractmethod
 import pandas as pd
-import sqlalchemy as sql; from sqlalchemy import Select, MetaData, Engine, TextClause, URL
+import sqlalchemy as sql; from sqlalchemy import Select, MetaData, Engine, TextClause, URL, create_engine, text
 
 class GetSqlQueryResult[T](AssigningStep[T], ABC):
     """ get the result of a sql query and assign it to `assign_to` """
 
-    def __init__(self, assign_to:Reference[T], url_args:dict):
+    def __init__(self, assign_to:Reference[T], engine:Engine|None=None, url_create_kwargs:dict|None=None):
         super().__init__(assign_to)
-        self.url_args = url_args
+        self.engine = GetSqlQueryResult.__handle_engine_init_args__(engine, url_create_kwargs)
+        
+
+    @staticmethod
+    def __handle_engine_init_args__(engine:Engine|None, url_create_kwargs:dict|None):
+        """ try to get an engine from the relevant constructor args
+            only one arg should be received
+            if `engine` is available, return it
+            if `url_create_kwargs` have been passed; construct an engine from them """
+        has_engine = isinstance(engine, Engine)
+        has_url_args = isinstance(url_create_kwargs, dict)
+        
+        if not (has_engine ^ has_url_args):
+            raise Exception(f"expected exactly one of `engine` and `url_create_kwargs`, got engine:{has_engine} url_create_kwargs:{has_url_args}")
+
+        if isinstance(engine, Engine):
+            return engine
+        
+        if isinstance(url_create_kwargs, dict):
+            url = URL.create(**url_create_kwargs)
+            return create_engine(url)
+        
+        raise Exception("`Engine` and `dict` cases should have been handled - this shouldn't be raisable!")
+
 
 
     def get_metadata(self) -> MetaData:
@@ -29,18 +52,10 @@ class GetSqlQueryResult[T](AssigningStep[T], ABC):
     @abstractmethod
     def get_query(self, metadata:MetaData) -> Select|TextClause:
         pass
-    
 
-    def get_connection(self) -> Engine:
-        return sql.create_engine(self.get_url())
-    
-
-    def get_url(self) -> URL:
-        return URL.create(**self.url_args)
-    
 
     def get_query_result(self, query:Select) -> DataFrame:
-        return pd.read_sql(query, self.get_connection())
+        return pd.read_sql(query, self.engine)
 
 
     def transform_result(self, result) -> T:
@@ -59,3 +74,14 @@ class GetSqlQueryResult[T](AssigningStep[T], ABC):
         query = self.get_query(metadata)
         result = self.get_query_result(query) # type: ignore
         return self.transform_result(result)
+    
+
+class GetSqlTextQueryResult(GetSqlQueryResult):
+    """ a simple implementation of GetSqlQueryResult using a text cquery type """
+    def __init__(self, assign_to: Reference, query:str, engine: Engine | None = None, url_create_kwargs: dict | None = None):
+        super().__init__(assign_to, engine, url_create_kwargs)
+        self.query = query
+
+    def get_query(self, metadata: MetaData) -> Select | TextClause:
+        return text(self.query)
+
