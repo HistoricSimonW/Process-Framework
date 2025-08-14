@@ -3,7 +3,7 @@ requires = ["setuptools>=64", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "process_model"
+name = "process"
 dynamic = ["version"]
 requires-python = ">=3.12"
 authors = [
@@ -11,15 +11,8 @@ authors = [
 ]
 
 dependencies = [
-    "elasticsearch>=8.13,<9.0",
-    "pandas>=2.2,<3",
-    "pydantic>=2.6,<3",
-    "requests>=2.31,<3"
+    "process_model @ git+https://github.com/HistoricSimonW/Process-Model"
 ]
-
-[project.optional-dependencies]
-sql=["sqlalchemy", "pyodbc"]
-geo=["geopandas"]
 
 [tool.setuptools]
 include-package-data = false
@@ -31,4 +24,4 @@ include-package-data = false
 where = ["src"]
 
 [tool.setuptools_scm]
-write_to = "src/process_model/_version.py"
+write_to = "src/process/_version.py"
