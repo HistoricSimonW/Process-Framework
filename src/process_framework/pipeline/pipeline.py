@@ -2,8 +2,9 @@ from abc import ABC, abstractmethod
 from .settings import SettingsBase
 from .metadata import RunMetadata
 from typing import Callable
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from ..steps import Step
+from elasticsearch import Elasticsearch
 
 class PipelineBuilderBase[T: PipelineBase](ABC):
     
@@ -40,3 +41,8 @@ class PipelineBase(BaseModel, ABC):
             self.logging_callback(self)
 
         self.logging_callback(self.name, 'completed')
+
+
+class ElasticSearchPipelineBase(PipelineBase):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    elasticsearch:Elasticsearch = Field(repr=False)
