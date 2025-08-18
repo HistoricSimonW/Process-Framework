@@ -33,13 +33,14 @@ class PipelineBase(BaseModel, ABC):
 
     def execute(self):
         self.logging_callback(self.name, 'started')
-        print(self)
+        self.logging_callback(self)
 
         for step in self.get_steps():
             self.logging_callback(type(step).__name__)
             step.do()
             self.logging_callback(self)
-
+            
+        self.logging_callback
         self.logging_callback(self.name, 'completed')
 
 
