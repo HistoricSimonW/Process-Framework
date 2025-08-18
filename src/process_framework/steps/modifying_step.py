@@ -1,5 +1,5 @@
-from process_model.references.reference import Reference
-from process_model.steps.step import Step
+from process_framework.references.reference import Reference
+from process_framework.steps.step import Step
 from abc import ABC, abstractmethod
 
 class ModifyingStep[T](Step, ABC):
