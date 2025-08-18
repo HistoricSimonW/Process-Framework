@@ -2,8 +2,10 @@ from abc import ABC, abstractmethod
 from .settings import SettingsBase
 from .metadata import RunMetadata
 from typing import Callable
+from pydantic import BaseModel, Field
+from ..steps import Step
 
-class PipelineBuilderBase(ABC):
+class PipelineBuilderBase[T: PipelineBase](ABC):
     
     def __init__(self, logging_callback):
         self.logging_callback=logging_callback
@@ -13,21 +15,28 @@ class PipelineBuilderBase(ABC):
     def get_name(self) -> str:
         pass
 
-
+    
     @abstractmethod
-    def build_process(self, settings:SettingsBase, metadata:RunMetadata) -> Callable:
-        """ build a pipeline process of References and Steps using normal control flow """
+    def build_pipeline(self, settings:SettingsBase, metadata:RunMetadata) -> T:
         pass
 
 
-    def build_pipeline(self, settings:SettingsBase, metadata:RunMetadata):
-        return Pipeline(self.build_process(settings, metadata))
-
-
-class Pipeline:
-
-    def __init__(self, process:Callable):
-        self.process = process
+class PipelineBase(BaseModel, ABC):
+    name:str
+    logging_callback:Callable = Field(repr=False)
+    
+    @abstractmethod
+    def get_steps(self) -> list[Step]:
+        pass
+    
 
     def execute(self):
-        return self.process()
+        self.logging_callback(self.name, 'started')
+        print(self)
+
+        for step in self.get_steps():
+            self.logging_callback(type(step).__name__)
+            step.do()
+            self.logging_callback(self)
+
+        self.logging_callback(self.name, 'completed')
