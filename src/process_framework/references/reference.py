@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import TypeVar, Generic, Type, Callable, Any
+from typing import Type, Callable, Any
 
 @dataclass
 class Reference[T]:
