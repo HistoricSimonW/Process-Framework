@@ -3,7 +3,7 @@ from ...references.reference import Reference
 from .assign_query_result_base import GetSqlQueryResultBase
 from pandas import DataFrame, Series
 from abc import ABC, abstractmethod
-from sqlalchemy import Select, MetaData, Engine, TextClause, Column
+from sqlalchemy import Select, MetaData, Engine, TextClause, ColumnElement
 
 
 class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
@@ -19,7 +19,7 @@ class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
 
         # metadata (do this here so we fail early, rather than during pipeline execution)
         self.metadata = self.get_metadata()
-        self.in_column = self.get_in_column(self.metadata)
+        self.in_column = self.get_in_column()
         
 
     def get_ids(self) -> list|None:
@@ -42,14 +42,15 @@ class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
     
 
     @abstractmethod
-    def get_in_column(self, metadata:MetaData) -> Column:
+    def get_in_column(self) -> ColumnElement:
         """ define the column used for 'column in(_ids)' expressions """
         ...
 
 
     @abstractmethod
     def populate_metadata(self, metadata:MetaData) -> None:
-        """ take an initialized `MetaData` and add tables to it """
+        """ take an initialized `MetaData` and add tables to it; bind tables to the Step """
+        # self.ExampleTable = Table('ExampleTable', metadata, Column('id'))
         ...
 
 
