@@ -10,11 +10,11 @@ class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
     """ get the result of a query defined using the sqlalchemy ORM"""
 
     def __init__(self, assign_to: Reference[T], *, engine: Engine | None = None, url_create_kwargs: dict | None = None, column_mapper:dict|Mapping|Callable[[str], str]|None=None, index: Any | None=None,
-                 limit:int|None=None, _ids:list|Reference[list]|None=None, where:str|None=None):
+                 limit:int|None=None, _ids:list|Reference[list]|Reference[Series]|None=None, where:str|None=None):
         super().__init__(assign_to, engine=engine, url_create_kwargs=url_create_kwargs, column_mapper=column_mapper, index=index)
         # qualifiers
         self.limit:int|None=limit
-        self._ids:list|Reference[list]|None = _ids
+        self._ids:list|Reference[list]|Reference[Series]|None = _ids
         self.where:str|None = where
 
         # metadata (do this here so we fail early, rather than during pipeline execution)
@@ -23,14 +23,22 @@ class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
         
 
     def get_ids(self) -> list|None:
-        """ handle _ids from list or Reference[list] or None to list or None """
+        """ handle _ids from list or Reference[list] or Reference[Series] or None to list or None """
         _ids = self._ids
         if _ids is None or isinstance(_ids, list):
             return _ids
         
         if isinstance(_ids, Reference) and _ids.is_instance_of(list):
-            return _ids.get_value(False)
-
+            value = _ids.get_value(False)
+            assert isinstance(value, list) or value is None
+            return value
+        
+        if isinstance(_ids, Reference) and _ids.is_instance_of(Series):
+            value = _ids.get_value(False)
+            if isinstance(value, Series):
+                return value.to_list()
+            return None
+            
         raise Exception()
     
     
