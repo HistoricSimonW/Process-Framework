@@ -81,6 +81,6 @@ class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
     
     def generate(self) -> T:
         """ generate a `T` by getting a query, getting its result, and transforming it """
-        query = self.get_query()
+        query = self.get_qualified_query()
         result = self.get_query_result(query) # type: ignore
         return self.transform_result(result)
