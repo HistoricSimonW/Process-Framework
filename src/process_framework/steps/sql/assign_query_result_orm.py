@@ -1,3 +1,4 @@
+from typing import Any, Mapping, Callable
 from ...references.reference import Reference
 from .assign_query_result_base import GetSqlQueryResultBase
 from pandas import DataFrame, Series
@@ -8,11 +9,9 @@ from sqlalchemy import Select, MetaData, Engine, TextClause, Column
 class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
     """ get the result of a query defined using the sqlalchemy ORM"""
 
-    def __init__(self, assign_to: Reference[T], *, 
-                 engine: Engine | None = None, url_create_kwargs: dict | None = None,  
+    def __init__(self, assign_to: Reference[T], *, engine: Engine | None = None, url_create_kwargs: dict | None = None, column_mapper:dict|Mapping|Callable[[str], str]|None=None, index: Any | None=None,
                  limit:int|None=None, _ids:list|Reference[list]|None=None, where:str|None=None):
-        super().__init__(assign_to, engine=engine, url_create_kwargs=url_create_kwargs)
-
+        super().__init__(assign_to, engine=engine, url_create_kwargs=url_create_kwargs, column_mapper=column_mapper, index=index)
         # qualifiers
         self.limit:int|None=limit
         self._ids:list|Reference[list]|None = _ids
@@ -24,7 +23,7 @@ class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
         
 
     def get_ids(self) -> list|None:
-        """ handle  """
+        """ handle _ids from list or Reference[list] or None to list or None """
         _ids = self._ids
         if _ids is None or isinstance(_ids, list):
             return _ids

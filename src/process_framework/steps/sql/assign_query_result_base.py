@@ -3,15 +3,17 @@ from ..assigning_step import AssigningStep
 from abc import ABC, abstractmethod
 import pandas as pd; from pandas import DataFrame, Series
 from sqlalchemy import Select, Engine, URL, create_engine
-
+from typing import Any, Mapping, Callable
 
 class GetSqlQueryResultBase[T:(DataFrame, Series)](AssigningStep[T], ABC):
     """ base class for Steps that assign the result of Sql queries to `assign_to`"""
 
     def __init__(self, assign_to:Reference[T], *, 
-                 engine:Engine|None=None, url_create_kwargs:dict|None=None):
+                 engine:Engine|None=None, url_create_kwargs:dict|None=None, column_mapper:dict|Mapping|Callable[[str], str]|None=None, index:str|Any|None=None):
         super().__init__(assign_to)
         self.engine = GetSqlQueryResultBase.__handle_engine_init_args__(engine, url_create_kwargs)
+        self.column_mapper = column_mapper
+        self.index = index
         
 
     @staticmethod
@@ -59,6 +61,17 @@ class GetSqlQueryResultBase[T:(DataFrame, Series)](AssigningStep[T], ABC):
 
     def transform_result(self, result) -> T:
         f""" transform the query result dataframe into a {type(T)} """
+        if self.column_mapper is not None:
+            result.columns = result.columns.map(self.column_mapper)
+
+        if isinstance(self.index, str):
+            if self.index in result.index.names:
+                pass 
+            elif self.index in result.columns:
+                result = result.set_index(self.index)
+            else:
+                print(f"index `{self.index}` was not a name in `result`'s columns or index; has it been changed by `column_mapper` {self.column_mapper}?")
+            
         if isinstance(result, self.assign_to._type):
             return result
         
