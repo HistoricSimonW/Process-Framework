@@ -1,1 +1,2 @@
-from .get_sql_query_result import GetSqlQueryResult, GetSqlTextQueryResult
+from .assign_query_result_orm import GetSqlQueryResult
+from .assign_query_result_text import GetSqlTextQueryResult
