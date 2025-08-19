@@ -68,17 +68,6 @@ class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
         
         return query
 
-
-    def transform_result(self, result) -> T:
-        f""" transform the result dataframe into a {type(T)} """
-        if isinstance(result, self.assign_to._type):
-            return result
-        
-        if len(result.columns) == 1 and self.assign_to._type == Series:
-            return result[result.columns[0]]
-        
-        raise Exception(f"`assign_to` expects a `{self.assign_to._type}`, but `result` is {type(result)}")
-
     
     def generate(self) -> T:
         """ generate a `T` by getting a query, getting its result, and transforming it """
