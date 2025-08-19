@@ -4,18 +4,28 @@ from typing import Any
 
 class ColumnReference(Reference[Series]):
     """ a reference to a column in the value of a Reference[DataFrame] """
-    def __init__(self, df:Reference[DataFrame], column:str):
+    def __init__(self, df:Reference[DataFrame], column:str, column_as_index:str|None=None):
         self._type = Series
         self.df = df
         self.column = column
+        self.column_as_index = column_as_index
 
 
     def set(self, value: Series | None):
-        assert self.df.has_value(), "referenced dataframe has no value; we can't assign a value to it"
+        if value is None:
+            self.value = None
+            return
+        
+        assert isinstance(value, Series), f'expected value of type `Series`, got {Series}'
+        
         df = self.df.value
-        assert isinstance(df, DataFrame)
-        df[self.column] = df.index.map(value)
-        super().set(value)
+        assert isinstance(df, DataFrame), "referenced dataframe has not been assigned; we can't assign a value to a column in it"
+        
+        # we can assign based on index (default) or use a `column_as_index` and map to that instead
+        if isinstance(self.column_as_index, str):
+            df[self.column] = df[self.column_as_index].map(value)
+        else:
+            df[self.column] = df.index.map(value)
 
 
     def get_value(self, throw_on_none: bool = False) -> Series | None:
