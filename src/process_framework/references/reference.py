@@ -16,6 +16,7 @@ class Reference[T]:
         assert self._type is not None
 
     def set(self, value: T | None):
+        """ set the `value` of this reference to `value`; throw if `value` is not None and not an instance of `_type` """
         if value is not None and not isinstance(value, self._type):
             raise TypeError(f"Expected value of type {self._type}, got {type(value)}")
         
@@ -24,15 +25,18 @@ class Reference[T]:
 
         self.value = value
 
-    def is_instance_of(self, cls) -> bool:
-        return isinstance(self.value, cls)
+    def is_instance_of(self, class_or_tuple) -> bool:
+        """ returns True if `value` is an instance of `class_or_tuple`; see `isinstance` """
+        return isinstance(self.value, class_or_tuple)
 
     def has_value(self) -> bool:
+        """ returns True if `value` is not None, else False """
         return self.value is not None
 
-    def get_value(self, throw_on_none:bool=False) -> T | None:
-        if throw_on_none and self.value is None:
-            raise ValueError(f'{self} has a None value')
+    def get_value(self) -> T:
+        """ get `value` as a `T`; throw if `value` is None 
+            useful for telling IDE type checkers that `value` is not None """
+        assert self.value is not None, f'{self} has a None value'
         return self.value
     
     def __repr__(self):
