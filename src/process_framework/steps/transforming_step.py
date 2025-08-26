@@ -15,10 +15,7 @@ class TransformingStep[T1, T2](Step, ABC):
 
     def do(self):
        
-        subject = self.subject_reference.get_value(throw_on_none=True)
-        
-        if subject is None:
-            return
+        subject = self.subject_reference.get_value()
         
         result = self.transform(subject)
         

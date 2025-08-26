@@ -16,9 +16,6 @@ class ModifyingStep[T](Step, ABC):
     def do(self):
         subject = self.subject_reference.get_value()
 
-        if subject is None:
-            return
-
         result = self.transform(subject)
         # print('result', result)
 
