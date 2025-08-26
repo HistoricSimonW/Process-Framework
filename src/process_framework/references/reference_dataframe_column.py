@@ -28,11 +28,11 @@ class ColumnReference(Reference[Series]):
             df[self.column] = df.index.map(value)
 
 
-    def get_value(self, throw_on_none: bool = False) -> Series | None:
-        assert self.df.has_value(), "referenced dataframe has no value; we can't get a value from it"
-        df = self.df.value
-        assert isinstance(df, DataFrame)
-        return df[self.column]
+    def get_value(self) -> Series:
+        # assert self.df.has_value(), "referenced dataframe has no value; we can't get a value from it"
+        # df = self.df.value
+        # assert isinstance(df, DataFrame)
+        return self.df.get_value()[self.column]
     
 
     def __repr__(self):
