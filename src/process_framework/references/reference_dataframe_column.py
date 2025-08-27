@@ -1,6 +1,6 @@
 from .reference import Reference
 from pandas import Series, DataFrame
-from typing import Any
+from typing import Any, Iterable
 
 class ColumnReference(Reference[Series]):
     """ a reference to a column in the value of a Reference[DataFrame] """
@@ -11,7 +11,16 @@ class ColumnReference(Reference[Series]):
         self.column_as_index = column_as_index
 
     def is_instance_of(self, class_or_tuple) -> bool:
-        return (class_or_tuple == Series) or (Series in class_or_tuple)
+        if not self.has_value():
+            return False
+        
+        if isinstance(class_or_tuple, type):
+            return class_or_tuple == Series
+        
+        if isinstance(class_or_tuple, Iterable):
+            return Series in class_or_tuple
+        
+        return False
     
     
     def has_value(self) -> bool:
