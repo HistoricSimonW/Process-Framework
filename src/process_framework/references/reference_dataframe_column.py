@@ -10,6 +10,13 @@ class ColumnReference(Reference[Series]):
         self.column = column
         self.column_as_index = column_as_index
 
+    def is_instance_of(self, class_or_tuple) -> bool:
+        return (class_or_tuple == Series) or (Series in class_or_tuple)
+    
+    
+    def has_value(self) -> bool:
+        return self.df.has_value() and (self.column in self.df.get_value().columns)
+    
 
     def set(self, value: Series | None):
         if value is None:
