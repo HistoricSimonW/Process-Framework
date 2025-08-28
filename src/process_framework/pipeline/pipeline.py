@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from .settings import SettingsBase
 from .metadata import RunMetadata
-from typing import Callable
+from typing import Callable, Annotated
 from dataclasses import dataclass, field, fields, KW_ONLY
 from ..steps import Step
 from elasticsearch import Elasticsearch
@@ -31,17 +31,17 @@ class PipelineBuilderBase[T: PipelineBase](ABC):
 @dataclass
 class PipelineBase(ABC):
     _=KW_ONLY,
-    
+    logging_callback:Annotated[Callable, None]
     name:str
-    logging_callback:Callable = field(repr=False, default=print)
     
-
     @abstractmethod
     def get_steps(self) -> list[Step]:
         pass
     
 
     def __post_init__(self) -> None:
+        if not self.logging_callback:
+            self.logging_callback = __dispose__
         self.init_references()
         self._validate_fields()
 
@@ -68,8 +68,3 @@ class PipelineBase(ABC):
             
         self.logging_callback
         self.logging_callback(self.name, 'completed')
-
-
-
-class ElasticSearchPipelineBase(PipelineBase):
-    elasticsearch:Elasticsearch = field(repr=False)
