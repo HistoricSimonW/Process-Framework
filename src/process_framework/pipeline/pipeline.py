@@ -30,8 +30,8 @@ class PipelineBuilderBase[T: PipelineBase](ABC):
 
 @dataclass
 class PipelineBase(ABC):
-    _=KW_ONLY,
-    logging_callback:Annotated[Callable, None]
+    # _=KW_ONLY,
+    logging_callback:Callable#Annotated[Callable, None]
     name:str
     
     @abstractmethod
