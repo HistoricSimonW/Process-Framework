@@ -1,10 +1,17 @@
 from abc import ABC, abstractmethod
 from .settings import SettingsBase
 from .metadata import RunMetadata
-from typing import Callable, Annotated
-from dataclasses import dataclass, field, fields, KW_ONLY
+from typing import Callable
+from dataclasses import dataclass, field, fields
 from ..steps import Step
-from elasticsearch import Elasticsearch
+
+
+REQUIRED_POST_INIT = 'required_after_init'
+
+
+def post_init_field():
+    """ a non-init field that will raise an error in __post_init__ if it hasn't been set """
+    return field(init=False, metadata={REQUIRED_POST_INIT:True})
 
 
 def __dispose__(msg) -> None:
@@ -30,8 +37,7 @@ class PipelineBuilderBase[T: PipelineBase](ABC):
 
 @dataclass
 class PipelineBase(ABC):
-    # _=KW_ONLY,
-    logging_callback:Callable#Annotated[Callable, None]
+    logging_callback:Callable
     name:str
     
     @abstractmethod
@@ -40,9 +46,14 @@ class PipelineBase(ABC):
     
 
     def __post_init__(self) -> None:
+        # assign a guardian value to logging_callback so we can safely invoke it if it hasn't been set
         if not self.logging_callback:
             self.logging_callback = __dispose__
+        
+        # initialize references (in the instance `self` context)
         self.init_references()
+        
+        # ensure all required fields have been set
         self._validate_fields()
 
 
@@ -52,7 +63,7 @@ class PipelineBase(ABC):
 
 
     def _validate_fields(self) -> None:
-        missing = [f for f in fields(self) if not f.init and f.name not in self.__dict__]
+        missing = [f for f in fields(self) if not f.init and f.name not in self.__dict__ and REQUIRED_POST_INIT in f.metadata]
         if missing:
             raise ValueError(f"Uninitialized required fields: {', '.join(f.name for f in missing)}")
         
