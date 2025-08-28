@@ -30,9 +30,9 @@ class PipelineBuilderBase[T: PipelineBase](ABC):
 
 @dataclass
 class PipelineBase(ABC):
-    name:str
-
     _=KW_ONLY,
+    
+    name:str
     logging_callback:Callable = field(repr=False, default=print)
     
 
