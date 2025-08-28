@@ -2,9 +2,15 @@ from abc import ABC, abstractmethod
 from .settings import SettingsBase
 from .metadata import RunMetadata
 from typing import Callable
-from pydantic import BaseModel, Field, ConfigDict
+from dataclasses import dataclass, field, fields, KW_ONLY
 from ..steps import Step
 from elasticsearch import Elasticsearch
+
+
+def __dispose__(msg) -> None:
+    """ a default logging_callback that consumes a message but does nothing with it """
+    ...
+
 
 class PipelineBuilderBase[T: PipelineBase](ABC):
     
@@ -22,14 +28,34 @@ class PipelineBuilderBase[T: PipelineBase](ABC):
         pass
 
 
-class PipelineBase(BaseModel, ABC):
+@dataclass
+class PipelineBase(ABC):
     name:str
-    logging_callback:Callable = Field(repr=False)
+
+    _=KW_ONLY,
+    logging_callback:Callable = field(repr=False, default=print)
     
+
     @abstractmethod
     def get_steps(self) -> list[Step]:
         pass
     
+
+    def __post_init__(self) -> None:
+        self.init_references()
+        self._validate_fields()
+
+
+    @abstractmethod
+    def init_references(self):
+        pass
+
+
+    def _validate_fields(self) -> None:
+        missing = [f for f in fields(self) if not f.init and f.name not in self.__dict__]
+        if missing:
+            raise ValueError(f"Uninitialized required fields: {', '.join(f.name for f in missing)}")
+        
 
     def execute(self):
         self.logging_callback(self.name, 'started')
@@ -44,6 +70,6 @@ class PipelineBase(BaseModel, ABC):
         self.logging_callback(self.name, 'completed')
 
 
+
 class ElasticSearchPipelineBase(PipelineBase):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    elasticsearch:Elasticsearch = Field(repr=False)
+    elasticsearch:Elasticsearch = field(repr=False)
