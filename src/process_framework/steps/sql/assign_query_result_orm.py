@@ -6,6 +6,7 @@ from pandas import DataFrame, Series
 from abc import ABC, abstractmethod
 from sqlalchemy import Select, MetaData, Engine, TextClause, ColumnElement
 
+MAX_IN_VALUES_LEN = 10_000
 
 class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
     """ get the result of a query defined using the sqlalchemy ORM"""
@@ -72,7 +73,7 @@ class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
             query = query.where(TextClause(self.where))
 
         _ids = self.get_ids()
-        if isinstance(_ids, list) and len(_ids) < 1_000:
+        if isinstance(_ids, list) and len(_ids) < MAX_IN_VALUES_LEN:
             query = query.where(self.in_column.in_(_ids))
         
         return query
