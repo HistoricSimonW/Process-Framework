@@ -52,6 +52,10 @@ class ColumnReference(Reference[Series]):
     
 
     def __repr__(self):
-        return f"ColumnReference[{'DataFrame' if self.df.has_value() else 'None'}.{self.column}]({self.value!r})"
+        if self.has_value():
+            vr = len(self.get_value())
+        else:
+            vr = self.value
+        return f"ColumnReference[{'DataFrame' if self.df.has_value() else 'None'}.{self.column}]({vr})"
     
 

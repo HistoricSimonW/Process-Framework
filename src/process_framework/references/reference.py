@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Type, Callable, Any
+from typing import Type, Callable, Any, Sequence
 
 @dataclass
 class Reference[T]:
@@ -40,4 +40,10 @@ class Reference[T]:
         return self.value
     
     def __repr__(self):
-        return f"Reference[{self._type.__name__}]({self.value!r})"
+        v = self.value
+        vr = f'{v!r}'
+        
+        if not isinstance(v, str) and isinstance(v, Sequence):
+            vr = len(v)
+
+        return f"Reference[{self._type.__name__}]({vr})"
