@@ -1,5 +1,16 @@
 from dataclasses import dataclass, field
-from typing import Type, Callable, Any, Sequence
+from typing import Type, Callable, Any
+from collections.abc import Sized
+import reprlib
+
+# one small, shared repr truncator
+_repr = reprlib.Repr()
+_repr.maxstring = 30
+_repr.maxother = 30
+_repr.maxlist = 3
+_repr.maxtuple = 3
+_repr.maxdict = 3
+
 
 @dataclass
 class Reference[T]:
@@ -32,18 +43,57 @@ class Reference[T]:
     def has_value(self) -> bool:
         """ returns True if `value` is not None, else False """
         return self.value is not None
-
+    
     def get_value(self) -> T:
         """ get `value` as a `T`; throw if `value` is None 
             useful for telling IDE type checkers that `value` is not None """
-        assert self.value is not None, f'{self} has a None value'
+        assert self.value is not None, 'Reference has a None value'
         return self.value
+
+
+    def _get_size(self) -> str|None:
+        try:
+            value = self.get_value()
+        except:
+            return None
+        
+        _size = None
+                
+        if shape:= getattr(value, 'shape', None):
+            _size = shape
+        elif not isinstance(value, str) and isinstance(value, Sized):
+            _size = len(value)
+
+        if _size is not None:
+            _size = str(_size).strip().strip(',')
+
+        return _size
+
+
+    def _get_sample(self) -> str:
+        try:
+            value = self.get_value()
+        except:
+            return 'None'
+
+        try:
+            if hasattr(value, 'to_list'):
+                return _repr.repr(value.to_list()) # type: ignore
+            elif hasattr(value, 'to_dict'):
+                return _repr.repr(value.to_dict('index')) # type: ignore
+            
+            return _repr.repr(value)
+        
+        except Exception:
+            return _repr.repr(value)
+
+
     
     def __repr__(self):
-        v = self.value
-        vr = f'{v!r}'
-        
-        if not isinstance(v, str) and isinstance(v, Sequence):
-            vr = len(v)
 
-        return f"Reference[{self._type.__name__}]({vr})"
+        _size = self._get_size()
+        _sample = self._get_sample()
+                
+        s = ', '.join(str(t) for t in (_size, _sample) if t)
+
+        return f"Reference[{self._type.__name__}]({s})"

@@ -49,13 +49,3 @@ class ColumnReference(Reference[Series]):
         # df = self.df.value
         # assert isinstance(df, DataFrame)
         return self.df.get_value()[self.column]
-    
-
-    def __repr__(self):
-        if self.has_value():
-            vr = len(self.get_value())
-        else:
-            vr = self.value
-        return f"ColumnReference[{'DataFrame' if self.df.has_value() else 'None'}.{self.column}]({vr})"
-    
-
