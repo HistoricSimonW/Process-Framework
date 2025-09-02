@@ -84,6 +84,7 @@ class GetSqlQueryResultBase[T:(DataFrame, Series)](AssigningStep[T], ABC):
     def generate(self) -> T:
         """ get the result of the query and transform it to a type assignable to `assign_to` """
         query = self.get_qualified_query()
-        with self.engine.connect() as conn, conn.begin():
-            result:DataFrame = self.get_query_result(query, conn)
+        with self.engine.connect() as conn:
+            with conn.begin():
+                result:DataFrame = self.get_query_result(query, conn)
         return self.transform_result(result)
