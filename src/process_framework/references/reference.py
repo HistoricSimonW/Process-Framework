@@ -57,17 +57,12 @@ class Reference[T]:
         except:
             return None
         
-        _size = None
-                
         if shape:= getattr(value, 'shape', None):
-            _size = shape
+            return shape
         elif not isinstance(value, str) and isinstance(value, Sized):
-            _size = len(value)
+            return str(len(value))
 
-        if _size is not None:
-            _size = str(_size).strip().strip(',')
-
-        return _size
+        return None
 
 
     def _get_sample(self) -> str:
