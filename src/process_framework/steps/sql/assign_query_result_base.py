@@ -2,7 +2,7 @@ from ...references.reference import Reference
 from ..assigning_step import AssigningStep
 from abc import ABC, abstractmethod
 import pandas as pd; from pandas import DataFrame, Series
-from sqlalchemy import Select, Engine, URL, create_engine
+from sqlalchemy import Select, Engine, URL, create_engine, Connection
 from typing import Any, Mapping, Callable
 
 class GetSqlQueryResultBase[T:(DataFrame, Series)](AssigningStep[T], ABC):
@@ -54,9 +54,9 @@ class GetSqlQueryResultBase[T:(DataFrame, Series)](AssigningStep[T], ABC):
         return self.qualify_query(query)
 
 
-    def get_query_result(self, query:Select) -> DataFrame:
+    def get_query_result(self, query:Select, conn:Connection) -> DataFrame:
         """ get the result of the qualified query as a DataFrame """
-        return pd.read_sql(query, self.engine)
+        return pd.read_sql(query, conn)
     
 
     def transform_result(self, result) -> T:
@@ -84,5 +84,6 @@ class GetSqlQueryResultBase[T:(DataFrame, Series)](AssigningStep[T], ABC):
     def generate(self) -> T:
         """ get the result of the query and transform it to a type assignable to `assign_to` """
         query = self.get_qualified_query()
-        result:DataFrame = self.get_query_result(query)
+        with self.engine.connect() as conn, conn.begin():
+            result:DataFrame = self.get_query_result(query, conn)
         return self.transform_result(result)

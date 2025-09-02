@@ -4,9 +4,13 @@ from ...references.reference_dataframe_column import ColumnReference
 from .assign_query_result_base import GetSqlQueryResultBase
 from pandas import DataFrame, Series
 from abc import ABC, abstractmethod
-from sqlalchemy import Select, MetaData, Engine, TextClause, ColumnElement
+from sqlalchemy import Select, MetaData, Engine, TextClause, ColumnElement, Table, Column, Connection, Insert, insert, values
+from sqlalchemy.schema import CreateTable, DropTable
+from itertools import batched
 
 MAX_IN_VALUES_LEN = 10_000
+TEMP_TABLE_NAME = '#TEMP_IDS'
+TEMP_TABLE_ID = '_id'
 
 class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
     """ get the result of a query defined using the sqlalchemy ORM"""
@@ -73,14 +77,14 @@ class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
             query = query.where(TextClause(self.where))
 
         _ids = self.get_ids()
-        if isinstance(_ids, list) and len(_ids) < MAX_IN_VALUES_LEN:
-            query = query.where(self.in_column.in_(_ids))
+        if isinstance(_ids, list):# and len(_ids) < MAX_IN_VALUES_LEN:
+            v = (
+                values(
+                    Column('_id'), name='v'
+                )
+                .data([(_id,) for _id in _ids])
+                .alias('v')
+            )
+            query = query.join(v, self.get_in_column() == v.c._id)
         
         return query
-
-    
-    def generate(self) -> T:
-        """ generate a `T` by getting a query, getting its result, and transforming it """
-        query = self.get_qualified_query()
-        result = self.get_query_result(query) # type: ignore
-        return self.transform_result(result)

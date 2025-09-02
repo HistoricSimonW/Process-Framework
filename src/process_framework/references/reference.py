@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Type, Callable, Any
+from typing import Type, Callable, Any, TypeVar
 from collections.abc import Sized
 import reprlib
 
@@ -11,6 +11,7 @@ _repr.maxlist = 3
 _repr.maxtuple = 3
 _repr.maxdict = 3
 
+T = TypeVar("T")
 
 @dataclass
 class Reference[T]:
