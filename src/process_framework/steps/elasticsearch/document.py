@@ -14,37 +14,49 @@ class Document(BaseModel, ABC):
     """ Documents must implement the `_id` abstract, computed property """
     model_config=ConfigDict(serialize_by_alias=True)
 
-    def get_id(self) -> Any:
-        # overwrite this
-        _id = getattr(self, 'id', None)
-        assert _id is not None
-        return _id
+    def _get_id(self) -> Any:
+        """ get an `id` for the Document:
+                returns `id` if it is a field in the doc
+                else raises a ValueError
+            this should be overridden if `id` is not a field in the doc """
+        # override this in derived classes if those classes don't implement `id` as a doc field
+        try:
+            return getattr(self, 'id')
+        except:
+            raise ValueError("Document does not contain a value for `id` and does not override `get_id`")
 
+
+    def _get_source(self) -> dict:
+        """ get the `source` of this doc, ready to be returned as part of an `index` or `bulk_index` action
+            this pops `id`, if it's part of the doc; it should be handled separately """
+        _source = self.model_dump()
+        _source.pop('id', None) # remove `id` if it's present
+        return _source
+    
 
     def get_bulk_index_action(self, index:str) -> dict:
         """ get a dict that can be passed to the elasticsearch.helpers.bulk api """
-        _source = self.model_dump()
-        _source.pop('id', None)
+        _source = self._get_source()
         return dict(
             _index=index,
             _op_type='index',
-            _id=self.get_id(),
+            _id=self._get_id(),
             _source=_source
         )
     
     
     @staticmethod
-    def gen_bulk_index_actions(index:str, documents: Iterable['Document']):
+    def gen_bulk_index_actions(index:str, documents: Iterable['Document']) -> Iterable[dict]:
+        """ gennerate an Iterable of bulk index actions for an iterable of `Document`s """
         for doc in documents:
             yield doc.get_bulk_index_action(index)
 
     
     def get_index_action(self) -> dict:
         """ get an index of kwargs that can be passed to elasticsearch.index """
-        source = self.model_dump()
-        source.pop('id', None)
+        _source = self._get_source()
         return dict(
-            id=self.get_id(),
-            document=source
+            id=self._get_id(),
+            document=_source
         )
     
