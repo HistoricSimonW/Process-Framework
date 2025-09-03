@@ -63,7 +63,7 @@ class ForEach[T](Step):
     
 
     def do(self):
-        values = self.items.get_value(True)
+        values = self.items.get_value()
 
         for value in self.item_iterer(values):
             print('item', value)

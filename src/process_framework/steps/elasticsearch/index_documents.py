@@ -41,7 +41,7 @@ class IndexDocuments(Step):
             assert self.elasticsearch.indices.exists(index=self.index), f'parameter `assert_index_exists==True` but index {self.index} does not exist'
 
         # generate actions
-        series:Series = self.subject.get_value(True) # type: ignore
+        series:Series = self.subject.get_value() # type: ignore
         actions = Document.gen_bulk_index_actions(
             index=self.index,
             documents=series.values
