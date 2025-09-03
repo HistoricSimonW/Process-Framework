@@ -26,10 +26,14 @@ class Document(BaseModel, ABC):
             raise ValueError("Document does not contain a value for `id` and does not override `get_id`")
 
 
-    def _get_source(self) -> dict:
-        """ get the `source` of this doc, ready to be returned as part of an `index` or `bulk_index` action
+    def _get_source(self, exclude_none:bool=True, **kwargs) -> dict:
+        """ get the json `source` of this doc, ready to be returned as part of an `index` or `bulk_index` action
             this pops `id`, if it's part of the doc; it should be handled separately """
-        _source = self.model_dump()
+        _source = self.model_dump(
+            mode='json',
+            exclude_none=exclude_none,
+            **kwargs
+        )
         _source.pop('id', None) # remove `id` if it's present
         return _source
     
