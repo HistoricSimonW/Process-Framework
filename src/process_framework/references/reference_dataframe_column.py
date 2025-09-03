@@ -4,11 +4,14 @@ from typing import Any, Iterable
 
 class ColumnReference(Reference[Series]):
     """ a reference to a column in the value of a Reference[DataFrame] """
-    def __init__(self, df:Reference[DataFrame], column:str, column_as_index:str|None=None):
+    def __init__(self, df:Reference[DataFrame], column:str, column_as_index:"str|ColumnReference|None"=None):
         self._type = Series
         self.df = df
         self.column = column
-        self.column_as_index = column_as_index
+        self.column_as_index = (
+            column_as_index.column if isinstance(column_as_index, ColumnReference) 
+            else column_as_index
+        )
 
     def is_instance_of(self, class_or_tuple) -> bool:
         if not self.has_value():
