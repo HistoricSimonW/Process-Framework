@@ -20,5 +20,6 @@ class DataFrameToDocuments[T:Document](TransformingStep[DataFrame, Series]):
                 df[n] = df.index.get_level_values(i)
 
         # construct documents by passing each row (axis=1) of the dataframe to the `document_type` constructor
-        return df.apply(lambda row: self.document_type(**row.to_dict()), axis=1)
+        return df.apply(lambda row: row.dropna().to_dict(), axis=1).map(self.document_type.model_validate)
+
 
