@@ -9,7 +9,7 @@ class GetSqlQueryResultBase[T:(DataFrame, Series)](AssigningStep[T], ABC):
     """ base class for Steps that assign the result of Sql queries to `assign_to`"""
 
     def __init__(self, assign_to:Reference[T], *, 
-                 engine:Engine|None=None, url_create_kwargs:dict|None=None, column_mapper:dict|Mapping|Callable[[str], str]|None=None, index:str|Any|None=None, drop_index_column:bool=False):
+                 engine:Engine|None=None, url_create_kwargs:dict|None=None, column_mapper:dict|Mapping|Callable[[str], str]|None=None, index:str|Any|None=None, drop_index_column:bool=True):
         super().__init__(assign_to)
         self.engine = GetSqlQueryResultBase.__handle_engine_init_args__(engine, url_create_kwargs)
         self.column_mapper = column_mapper
