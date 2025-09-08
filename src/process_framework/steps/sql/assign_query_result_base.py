@@ -9,11 +9,12 @@ class GetSqlQueryResultBase[T:(DataFrame, Series)](AssigningStep[T], ABC):
     """ base class for Steps that assign the result of Sql queries to `assign_to`"""
 
     def __init__(self, assign_to:Reference[T], *, 
-                 engine:Engine|None=None, url_create_kwargs:dict|None=None, column_mapper:dict|Mapping|Callable[[str], str]|None=None, index:str|Any|None=None):
+                 engine:Engine|None=None, url_create_kwargs:dict|None=None, column_mapper:dict|Mapping|Callable[[str], str]|None=None, index:str|Any|None=None, drop_index_column:bool=False):
         super().__init__(assign_to)
         self.engine = GetSqlQueryResultBase.__handle_engine_init_args__(engine, url_create_kwargs)
         self.column_mapper = column_mapper
         self.index = index
+        self.drop_index_column = drop_index_column
         
 
     @staticmethod
@@ -68,7 +69,7 @@ class GetSqlQueryResultBase[T:(DataFrame, Series)](AssigningStep[T], ABC):
             if self.index in result.index.names:
                 pass 
             elif self.index in result.columns:
-                result = result.set_index(self.index)
+                result = result.set_index(self.index, drop=self.drop_index_column)
             else:
                 print(f"index `{self.index}` was not a name in `result`'s columns or index; has it been changed by `column_mapper` {self.column_mapper}?")
             
