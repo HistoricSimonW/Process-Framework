@@ -20,8 +20,8 @@ class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
     """ get the result of a query defined using the sqlalchemy ORM"""
 
     def __init__(self, assign_to: Reference[T], *, engine: Engine | None = None, url_create_kwargs: dict | None = None, column_mapper:dict|Mapping|Callable[[str], str]|None=None, index: Any | None=None,
-                 limit:int|None=None, _ids:list|Reference[list]|Reference[Series]|None=None, where:str|None=None):
-        super().__init__(assign_to, engine=engine, url_create_kwargs=url_create_kwargs, column_mapper=column_mapper, index=index)
+                 limit:int|None=None, _ids:list|Reference[list]|Reference[Series]|None=None, where:str|None=None, drop_index_column:bool=True):
+        super().__init__(assign_to, engine=engine, url_create_kwargs=url_create_kwargs, column_mapper=column_mapper, index=index, drop_index_column=drop_index_column)
         # qualifiers
         self.limit:int|None=limit
         self._ids:list|Reference[list]|Reference[Series]|None = _ids
