@@ -27,7 +27,7 @@ class _Retry[TBatch]:
 class BatchProcess[TIn, TBatch, TOut](TransformingStep[TIn, TOut], ABC):
     """ Apply a sequence of `Steps` to `batches` of `TBatch` """
     
-    def __init__(self, subject: Reference[TIn], assign_to: Reference[TOut], args:Namespace, refs:SimpleNamespace, clients:SimpleNamespace, *, 
+    def __init__(self, subject: Reference[TIn], assign_to: Reference[TOut], args:Namespace|SimpleNamespace, refs:Namespace|SimpleNamespace, clients:Namespace|SimpleNamespace, *, 
                  batch_type:Type[TBatch], 
                  batch_size:int|None=None):
         super().__init__(subject, assign_to)
@@ -45,12 +45,12 @@ class BatchProcess[TIn, TBatch, TOut](TransformingStep[TIn, TOut], ABC):
             raise Exception()
 
     @abstractmethod
-    def initialize_steps(self, args:Namespace, refs:SimpleNamespace, outer_refs:SimpleNamespace, clients:SimpleNamespace) -> list[Step]:
+    def initialize_steps(self, args:Namespace|SimpleNamespace, refs:Namespace|SimpleNamespace, outer_refs:Namespace|SimpleNamespace, clients:Namespace|SimpleNamespace) -> list[Step]:
         pass
 
     
     @abstractmethod
-    def initialize_references(self, args:Namespace, outer_refs:SimpleNamespace) -> SimpleNamespace:
+    def initialize_references(self, args:Namespace|SimpleNamespace, outer_refs:Namespace|SimpleNamespace) -> SimpleNamespace:
         pass
 
 
