@@ -25,7 +25,9 @@ class Reference[T]:
         if self.value is not None and not isinstance(self.value, self._type):
             raise TypeError(f"Expected value of type {self._type}, got {type(self.value)}")
         
-        assert self._type is not None
+        if self._type is None:
+            raise TypeError(f'`Type` must not be `None`, got {self._type}')
+
 
     def set(self, value: T | None):
         """ set the `value` of this reference to `value`; throw if `value` is not None and not an instance of `_type` """
@@ -37,13 +39,16 @@ class Reference[T]:
 
         self.value = value
 
+
     def is_instance_of(self, class_or_tuple) -> bool:
         """ returns True if `value` is an instance of `class_or_tuple`; see `isinstance` """
         return isinstance(self.value, class_or_tuple)
 
+
     def has_value(self) -> bool:
         """ returns True if `value` is not None, else False """
         return self.value is not None
+    
     
     def get_value(self) -> T:
         """ get `value` as a `T`; throw if `value` is None 

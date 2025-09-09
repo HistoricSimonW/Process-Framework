@@ -1,6 +1,6 @@
 from .reference import Reference
 from pandas import Series, DataFrame
-from typing import Any, Iterable
+from typing import Iterable
 
 class ColumnReference(Reference[Series]):
     """ a reference to a column in the value of a Reference[DataFrame] """
@@ -48,7 +48,5 @@ class ColumnReference(Reference[Series]):
 
 
     def get_value(self) -> Series:
-        # assert self.df.has_value(), "referenced dataframe has no value; we can't get a value from it"
-        # df = self.df.value
-        # assert isinstance(df, DataFrame)
+        """ return the column `self.column` of `self.df`; throws an error if `self.df` is not set, or `self.column` is not in the `DataFrame` """
         return self.df.get_value()[self.column]
