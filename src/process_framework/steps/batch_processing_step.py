@@ -48,13 +48,13 @@ class BatchProcess[TIn, TBatch, TOut](TransformingStep[TIn, TOut], ABC):
         if isinstance(subject, Series) and self._batch_type is Series:
             n = len(subject)
             for start in range(0, n, self.batch_size):
-                yield subject.iloc[start : start + self.batch_size]  # type: ignore
+                yield subject.iloc[start : start + self.batch_size].copy()  # type: ignore
             return
 
         if isinstance(subject, DataFrame) and self._batch_type is DataFrame:
             n = len(subject.index)
             for start in range(0, n, self.batch_size):
-                yield subject.iloc[start : start + self.batch_size, :]  # type: ignore
+                yield subject.iloc[start : start + self.batch_size, :].copy()  # type: ignore
             return
 
         if isinstance(subject, Iterable) and self._batch_type is list:
