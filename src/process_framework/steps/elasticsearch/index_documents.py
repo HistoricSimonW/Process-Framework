@@ -1,7 +1,6 @@
 from ...references.reference import Reference
 from ..assigning_step import Step
 from .document import Document
-
 from pandas import Series
 from elasticsearch.client import Elasticsearch
 from elasticsearch.helpers import bulk

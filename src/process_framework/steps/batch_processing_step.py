@@ -4,14 +4,24 @@ from abc import ABC, abstractmethod
 from pandas import DataFrame, Series
 from itertools import batched
 from typing import Any, TypeVar, Type
-from types import SimpleNamespace
+from collections import deque
 from collections.abc import Iterable
+from types import SimpleNamespace
 from argparse import Namespace
+from dataclasses import dataclass
 
 
 TIn = TypeVar("TIn")
 TBatch = TypeVar("TBatch")
 TOut = TypeVar("TOut")
+
+    
+@dataclass
+class _Retry[TBatch]:
+    i:int
+    batch:TBatch
+    try_:int
+
 
 
 class BatchProcess[TIn, TBatch, TOut](TransformingStep[TIn, TOut], ABC):
@@ -26,6 +36,8 @@ class BatchProcess[TIn, TBatch, TOut](TransformingStep[TIn, TOut], ABC):
         self.refs = self.initialize_references(args=args, outer_refs=refs)
         self.steps = self.initialize_steps(args=args, refs=self.refs, outer_refs=refs, clients=clients)
         self._batch_type:Type[TBatch] = batch_type
+        
+        self.max_retries = 25
         
         if isinstance(batch_size, int) or (batch_size := args.batch_size):
             self.batch_size = batch_size
@@ -65,10 +77,15 @@ class BatchProcess[TIn, TBatch, TOut](TransformingStep[TIn, TOut], ABC):
         raise ValueError("Unhandled TSubject -> TBatch generaiton")
 
     
-    def process_batch(self) -> Any|None:
+    def apply_steps(self) -> Any|None:
         """ apply `self.steps` to the current `batch` """
         for step in self.steps:
             step.do()
+
+
+    def handle_batch(self, batch:TBatch):
+        self.batch.set(batch)
+        self.apply_steps()
 
     
     def get_output(self) -> TOut | None:
@@ -76,11 +93,37 @@ class BatchProcess[TIn, TBatch, TOut](TransformingStep[TIn, TOut], ABC):
         return None
     
 
+
     def transform(self, subject: TIn) -> TOut | None:
         """ transform the subject by generating batches from `subject`, assigning each batch to `self.batch`, then applying `process_batch` """
-        for i, batch in enumerate(self.gen_batches(subject)):
-            self.batch.set(batch)
-            result = self.process_batch()
-            print(i, result)
+        to_retry:deque[_Retry] = deque()
 
+        # try all the batches
+        for i, batch in enumerate(self.gen_batches(subject)):
+            try:
+                self.handle_batch(batch)
+            except Exception as e:
+                print(i, e)
+                to_retry.append(_Retry(i, batch, 0))
+
+        # while there are _Retries handle them until their `try_` exceeds `self.max_retries`
+        while to_retry:
+            retry = to_retry.popleft()
+            try:
+                print("retrying", retry.i, f"(try={retry.try_ + 1}/{self.max_retries})")
+                self.handle_batch(retry.batch)
+            
+            except Exception as e:
+                if retry.try_ >= self.max_retries:
+                    print(f'retries exhausted for batch {retry.i}')
+                    raise
+                
+                print(retry.i, e)
+                retry.try_ += 1
+                to_retry.append(retry)
+
+        if to_retry:
+            raise Exception(f"Retries were exhausted; {len(to_retry)} batches unhandled")
+        
         return self.get_output()
+    
