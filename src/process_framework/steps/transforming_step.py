@@ -4,9 +4,10 @@ from abc import abstractmethod, ABC
 
 class TransformingStep[T1, T2](Step, ABC):
     """ a step that performs an type-transforming transformation to a subject, assigning the result to a different reference. The transformation can change the type of the subject """
-    def __init__(self, subject:Reference[T1], assign_to:Reference[T2]):
+    def __init__(self, subject:Reference[T1], assign_to:Reference[T2], *, overwrite:bool=False):
         self.subject_reference = subject
         self.assign_to = assign_to
+        self.overwrite = overwrite
 
     @abstractmethod
     def transform(self, subject:T1) -> T2|None:
@@ -14,7 +15,9 @@ class TransformingStep[T1, T2](Step, ABC):
         pass
 
     def do(self):
-       
+        if self.assign_to.has_value() and not self.overwrite:
+            return self.assign_to.get_value()
+        
         subject = self.subject_reference.get_value()
         
         result = self.transform(subject)
