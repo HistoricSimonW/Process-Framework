@@ -11,6 +11,7 @@ from itertools import batched
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from process_framework.references.reference import _repr
+import logging
 
 MAX_IN_VALUES_LEN = 10_000
 TEMP_TABLE_NAME = '#TEMP_IDS'
@@ -70,7 +71,7 @@ class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
         # if we have _ids, we need a 'temp table' definition in our metadata
         if self.has_ids():
             self._temp_table = self._get_temp_table_metadata(metadata)
-            print(self._temp_table)
+            logging.info((f'{self} has created a temp table for _ids {self._temp_table}'))
 
         return metadata
 
