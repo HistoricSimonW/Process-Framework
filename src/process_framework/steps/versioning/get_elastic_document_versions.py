@@ -6,7 +6,7 @@ from elasticsearch.helpers import scan
 from typing import Iterable, Any
 import logging
 
-class GetElasticIndexState(AssigningStep[Series]):
+class GetElasticDocumentVersions(AssigningStep[Series]):
     """ scan an elasticsearch index, producing a series of { _id : source}, where `source` is a scalar field that indicates the state of a document """
     def __init__(self, assign_to: Reference[Series], elasticsearch:Elasticsearch, index:str, source:str, dtype:str|type, *, overwrite:bool=True):
         super().__init__(assign_to)
