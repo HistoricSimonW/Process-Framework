@@ -10,8 +10,9 @@ DEFAULT_FILTER_PATH = 'index,took,hits.hits._id,hits.hits._source,_scroll_id,_sh
 
 class ScanToDataFrame[T:(Series, DataFrame)](AssigningStep[T]):
     """ assign the result of an ElasticSearch index scan to a context """
-    def __init__(self, assign_to:Reference[T], elasticsearch:Elasticsearch, index:str, source:str|list[str]|bool|None, query:dict[str, Any]|None=None, dtypes:dict[str, Any]|None=None, keep_columns:list[str]|None=None, *, limit:int|None=None, size:int=1000, filter_path:str|None=DEFAULT_FILTER_PATH):
-        super().__init__(assign_to)
+    def __init__(self, assign_to:Reference[T], elasticsearch:Elasticsearch, index:str, source:str|list[str]|bool|None, query:dict[str, Any]|None=None, dtypes:dict[str, Any]|None=None, keep_columns:list[str]|None=None, *, 
+                 limit:int|None=None, size:int=1000, filter_path:str|None=DEFAULT_FILTER_PATH, overwrite:bool=True):
+        super().__init__(assign_to, overwrite=overwrite)
         self.elasticsearch = elasticsearch
         self.index = index
         self.query = query
@@ -38,7 +39,7 @@ class ScanToDataFrame[T:(Series, DataFrame)](AssigningStep[T]):
     def hits_to_dataframe(hits:Iterable[dict], dtypes:dict[str,Any]|None=None, columns:list[str]|None=None, limit:int|None=None):
         # build an `_id`-indexed dataframe from the `hits` iterator
         df:DataFrame = DataFrame.from_records(
-            islice(hits, limit), 
+            islice(hits, limit),  # type: ignore
             index='_id', 
             columns=['_id', '_index', '_source', '_fields']
         )
@@ -57,7 +58,7 @@ class ScanToDataFrame[T:(Series, DataFrame)](AssigningStep[T]):
                 df = df.drop(col, axis=1)
                 continue
 
-            col_df = DataFrame.from_records(df[col].values, df.index)
+            col_df = DataFrame.from_records(df[col].values, df.index) # type: ignore
             col_df = col_df[col_df.columns.difference(df.columns)]
             df = df.join(col_df, how='left').drop(col, axis=1)
 

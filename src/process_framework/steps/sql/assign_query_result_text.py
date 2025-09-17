@@ -8,8 +8,8 @@ class GetTextQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T]):
     """ a simple implementation of GetSqlQueryResult using a text query type """
 
     def __init__(self, assign_to: Reference[T], query:str, *, 
-                 engine: Engine | None = None, url_create_kwargs: dict | None = None, column_mapper:dict|Mapping|Callable[[str], str]|None=None, index: Any | None=None, drop_index_column:bool=True):
-        super().__init__(assign_to, engine=engine, url_create_kwargs=url_create_kwargs, column_mapper=column_mapper, index=index, drop_index_column=drop_index_column)
+                 engine: Engine | None = None, url_create_kwargs: dict | None = None, column_mapper:dict|Mapping|Callable[[str], str]|None=None, index: Any | None=None, drop_index_column:bool=True, overwrite:bool=True):
+        super().__init__(assign_to, engine=engine, url_create_kwargs=url_create_kwargs, column_mapper=column_mapper, index=index, drop_index_column=drop_index_column, overwrite=overwrite)
         self.query = query
 
     def get_query(self) -> TextClause:

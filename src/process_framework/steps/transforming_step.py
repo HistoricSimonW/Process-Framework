@@ -4,7 +4,7 @@ from abc import abstractmethod, ABC
 
 class TransformingStep[T1, T2](Step, ABC):
     """ a step that performs an type-transforming transformation to a subject, assigning the result to a different reference. The transformation can change the type of the subject """
-    def __init__(self, subject:Reference[T1], assign_to:Reference[T2], *, overwrite:bool=False):
+    def __init__(self, subject:Reference[T1], assign_to:Reference[T2], *, overwrite:bool=True):
         self.subject_reference = subject
         self.assign_to = assign_to
         self.overwrite = overwrite

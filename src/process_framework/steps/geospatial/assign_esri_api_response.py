@@ -14,8 +14,8 @@ from typing import Iterable
 class ArcGisApiTransformer(TransformingStep[DataFrame, GeoDataFrame], ABC):
     """ transform a `subject` DataFrame into a GeoDataFrame of Responses """
     def __init__(self, subject: Reference[DataFrame], assign_to: Reference[GeoDataFrame], endpoint_url:str, *, 
-                 batch_size:int=1000, max_retries:int=5, retry_backoff_factor:float=10, payload_args:dict|None=None, verify_session:bool=False):
-        super().__init__(subject, assign_to)
+                 batch_size:int=1000, max_retries:int=5, retry_backoff_factor:float=10, payload_args:dict|None=None, verify_session:bool=False, overwrite:bool=True):
+        super().__init__(subject, assign_to, overwrite=overwrite)
     
         self.endpoint_url = endpoint_url
         self.batch_size=batch_size

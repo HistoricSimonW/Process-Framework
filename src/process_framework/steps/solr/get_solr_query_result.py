@@ -7,8 +7,8 @@ from inflection import underscore
 
 class GetSolrQueryResult[T](AssigningStep[T]):
     """ assign the result of an ElasticSearch index scan to a context """
-    def __init__(self, assign_to:Reference[T], url:str, instance:str, *, type_name:str|None, fq:str|None, fields:list[str]|None=None, start:int=0, rows:int=1000, limit:int|None=None):
-        super().__init__(assign_to)
+    def __init__(self, assign_to:Reference[T], url:str, instance:str, *, type_name:str|None, fq:str|None, fields:list[str]|None=None, start:int=0, rows:int=1000, limit:int|None=None, overwrite:bool=True):
+        super().__init__(assign_to, overwrite=overwrite)
         self.url = url
         self.instance = instance
         if (type_name and fq) or (not type_name and not fq):
@@ -53,7 +53,7 @@ class GetSolrQueryResult[T](AssigningStep[T]):
         records = (record for batch in batches for record in batch)
 
         df = DataFrame.from_records(
-            data=records,
+            data=records, # type: ignore
             index='id'
         )
         
@@ -66,9 +66,9 @@ class GetSolrQueryResult[T](AssigningStep[T]):
         df.columns = df.columns.map(underscore)
 
         if len(df.columns) == 1 and self.assign_to._type == Series:
-            return df[df.columns[0]]
+            return df[df.columns[0]] # type: ignore
         
         if self.assign_to._type == DataFrame:
-            return df
+            return df # type: ignore
         
         raise ValueError("unhandled state")

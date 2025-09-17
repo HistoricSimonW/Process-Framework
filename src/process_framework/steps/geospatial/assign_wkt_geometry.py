@@ -7,8 +7,8 @@ class TransformGeometryToWkt[T:(GeoSeries, GeoDataFrame)](TransformingStep[T, Se
     """ transform a n input GeoSeries or GeoDataFrame to a Series of WKT strings """
     def __init__(self, subject: Reference[T], assign_to: Reference[Series], 
                  out_crs:int=4326, buffer:float=0,
-                 rounding_precision:int=5, trim:bool=True):
-        super().__init__(subject, assign_to)
+                 rounding_precision:int=5, trim:bool=True, *, overwrite:bool=True):
+        super().__init__(subject, assign_to, overwrite=overwrite)
         self.out_crs=out_crs
         self.rounding_precision=rounding_precision
         self.trim =trim
