@@ -1,5 +1,5 @@
 from ...references.reference import Reference
-from ..assigning_step import Step
+from ..step import Step
 from .document import Document
 from pandas import Series
 from elasticsearch.client import Elasticsearch
@@ -38,9 +38,7 @@ class IndexDocuments(Step):
     def do(self):
         # perform assertions
         assert self.subject.has_value()
-        if self.assert_exists:
-            assert self.elasticsearch.indices.exists(index=self.index), f'parameter `assert_index_exists==True` but index {self.index} does not exist'
-
+        
         # generate actions
         series:Series = self.subject.get_value() # type: ignore
         actions = Document.gen_bulk_index_actions(
@@ -62,3 +60,11 @@ class IndexDocuments(Step):
             self.assign_result.set(result)
             
         info(f'{result}')
+
+
+    def preflight(self):
+        assert self.elasticsearch.info()
+        if self.assert_exists:
+            assert self.elasticsearch.indices.exists(index=self.index)
+        if self.pipeline:
+            assert self.elasticsearch.ingest.get_pipeline(id=self.pipeline)

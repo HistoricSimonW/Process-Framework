@@ -9,8 +9,8 @@ class GetSolrQueryResult[T](AssigningStep[T]):
     """ assign the result of an ElasticSearch index scan to a context """
     def __init__(self, assign_to:Reference[T], url:str, instance:str, *, type_name:str|None, fq:str|None, fields:list[str]|None=None, start:int=0, rows:int=1000, limit:int|None=None, overwrite:bool=True):
         super().__init__(assign_to, overwrite=overwrite)
-        self.url = url
-        self.instance = instance
+        self.url = url.strip('/')
+        self.instance = instance.strip('/')
         if (type_name and fq) or (not type_name and not fq):
             raise AttributeError("expected exactly one of `type_name` or `fq`")
 
@@ -35,9 +35,11 @@ class GetSolrQueryResult[T](AssigningStep[T]):
 
         # load docs from solr
         total = 0
+        select_url = f'{self.url}/{self.instance}/select'
         while True:
             response = self.session.get(
-                url='/'.join((self.url, self.instance, 'select')),
+                # url='/'.join((self.url, self.instance, 'select')),
+                url=select_url,
                 params=params
             )
             batch = response.json()['response']['docs']
@@ -72,3 +74,8 @@ class GetSolrQueryResult[T](AssigningStep[T]):
             return df # type: ignore
         
         raise ValueError("unhandled state")
+    
+
+    def preflight(self):
+        self.session.head(url=self.url).raise_for_status()
+        self.session.head(url=f'{self.url}/{self.instance}/select?q=*:*').raise_for_status()

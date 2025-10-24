@@ -6,7 +6,6 @@ from typing import Any, Tuple
 from logging import info
 from typing import Iterable
 
-# TODO: Pull this up to Framework
 class DeleteById(Step):
     """ delete docs with `_ids` passed as `subject` from the specified `index` using the elasticsearch `bulk` helper"""
     def __init__(self, subject:Reference[Iterable], elasticsearch:Elasticsearch, index:str, *, assign_result:Reference[Any]|None=None, assert_index_exists:bool=True):
@@ -41,3 +40,7 @@ class DeleteById(Step):
         if self.assign_result:
             self.assign_result.set(result)
 
+    
+    def preflight(self):
+        assert self.elasticsearch.info()
+        assert self.elasticsearch.indices.exists(index=self.index)

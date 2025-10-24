@@ -21,5 +21,3 @@ class DataFrameToDocuments[T:Document](TransformingStep[DataFrame, Series]):
 
         # construct documents by passing each row (axis=1) of the dataframe to the `document_type` constructor
         return df.apply(lambda row: row.dropna().to_dict(), axis=1).map(self.document_type.model_validate)
-
-

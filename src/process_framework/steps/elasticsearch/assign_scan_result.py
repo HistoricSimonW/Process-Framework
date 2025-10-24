@@ -103,6 +103,7 @@ class ScanToDataFrame[T:(Series, DataFrame)](AssigningStep[T]):
         
         return cast(T, result[column])
 
+
     def handle_empty_result(self, result:DataFrame) -> DataFrame:
         if len(result) > 0:
             return result
@@ -117,3 +118,8 @@ class ScanToDataFrame[T:(Series, DataFrame)](AssigningStep[T]):
         result = ScanToDataFrame.hits_to_dataframe(hits, self.dtypes, self.keep_columns, self.limit)
         result = self.handle_empty_result(result)
         return self.transform_result(result)
+    
+
+    def preflight(self):
+        assert self.elasticsearch.info()
+        assert self.elasticsearch.indices.exists(index=self.index)

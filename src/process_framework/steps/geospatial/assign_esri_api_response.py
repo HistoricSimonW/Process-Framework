@@ -126,3 +126,7 @@ class ArcGisApiTransformer(TransformingStep[DataFrame, GeoDataFrame], ABC):
 
     def transform(self, subject: DataFrame) -> GeoDataFrame | None:
         return self.get_geodataframe_for_docs(subject)
+    
+
+    def preflight(self):
+        self.get_session().head(self.endpoint_url).raise_for_status()
