@@ -1,3 +1,2 @@
-from .reference import Reference
-from .reference import _repr
-from .reference_dataframe_column import ColumnReference
+from .reference import Reference, _repr
+from .dataframe import ColumnReference, IndexReference

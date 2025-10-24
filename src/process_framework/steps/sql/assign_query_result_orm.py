@@ -1,7 +1,7 @@
 from types import TracebackType
 from typing import Any, Mapping, Callable
 from ...references.reference import Reference
-from ...references.reference_dataframe_column import ColumnReference
+from ...references.dataframe.reference_column import ColumnReference
 from .assign_query_result_base import GetSqlQueryResultBase
 from pandas import DataFrame, Series
 from abc import ABC, abstractmethod
@@ -71,7 +71,7 @@ class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
         # if we have _ids, we need a 'temp table' definition in our metadata
         if self.has_ids():
             self._temp_table = self._get_temp_table_metadata(metadata)
-            logging.info((f'{self} has created a temp table for _ids {self._temp_table}'))
+            logging.info(f'{self} has created a temp table for _ids {self._temp_table}')
 
         return metadata
 

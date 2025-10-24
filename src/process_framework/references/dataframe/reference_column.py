@@ -1,6 +1,7 @@
-from .reference import Reference
+from ..reference import Reference
 from pandas import Series, DataFrame
 from typing import Iterable
+
 
 class ColumnReference(Reference[Series]):
     """ a reference to a column in the value of a Reference[DataFrame] """
