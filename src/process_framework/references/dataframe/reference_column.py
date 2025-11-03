@@ -14,6 +14,7 @@ class ColumnReference(Reference[Series]):
             else column_as_index
         )
 
+
     def is_instance_of(self, class_or_tuple) -> bool:
         if not self.has_value():
             return False

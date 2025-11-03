@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Type, Callable, Any, TypeVar
+from typing import Callable, Any
 from collections.abc import Sized
 import reprlib
 
@@ -11,25 +11,25 @@ _repr.maxlist = 3
 _repr.maxtuple = 3
 _repr.maxdict = 3
 
-T = TypeVar("T")
 
-@dataclass
+@dataclass(slots=True)
 class Reference[T]:
     """ a nullable, 'boxed' reference to a [T] with runtime type checking """
-    _type: Type[T] = field(repr=False)
+    _type: type[T] = field(repr=False)
     value: T | None = None
 
     on_set:Callable[['Reference[T]', T|None], Any]|None=None    # an optional callback, invoked on `set`
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """ check that _type is not None and that, if value is not None, that it is an instance of self._type """
+        if self._type is None:
+            raise TypeError(f'`Type` must not be `None`, got {self._type}')
+        
         if self.value is not None and not isinstance(self.value, self._type):
             raise TypeError(f"Expected value of type {self._type}, got {type(self.value)}")
         
-        if self._type is None:
-            raise TypeError(f'`Type` must not be `None`, got {self._type}')
 
-
-    def set(self, value: T | None):
+    def set(self, value: T | None) -> None:
         """ set the `value` of this reference to `value`; throw if `value` is not None and not an instance of `_type` """
         if value is not None and not isinstance(value, self._type):
             raise TypeError(f"Expected value of type {self._type}, got {type(value)}")
@@ -40,7 +40,7 @@ class Reference[T]:
         self.value = value
 
 
-    def is_instance_of(self, class_or_tuple) -> bool:
+    def is_instance_of(self, class_or_tuple: type | tuple[type, ...]) -> bool:
         """ returns True if `value` is an instance of `class_or_tuple`; see `isinstance` """
         return isinstance(self.value, class_or_tuple)
 
@@ -53,19 +53,23 @@ class Reference[T]:
     def get_value(self) -> T:
         """ get `value` as a `T`; throw if `value` is None 
             useful for telling IDE type checkers that `value` is not None """
-        assert self.value is not None, 'Reference has a None value'
+        if self.value is None:
+            raise ValueError("Reference has a None value")
         return self.value
 
 
     def _get_size(self) -> str|None:
+        # try to get the value
         try:
             value = self.get_value()
         except:
             return None
         
+        # pandas-like shapes
         if shape:= getattr(value, 'shape', None):
             return shape
-        elif not isinstance(value, str) and isinstance(value, Sized):
+        
+        if not isinstance(value, str) and isinstance(value, Sized):
             return str(len(value))
 
         return None
@@ -80,7 +84,8 @@ class Reference[T]:
         try:
             if hasattr(value, 'to_list'):
                 return _repr.repr(value.to_list()) # type: ignore
-            elif hasattr(value, 'to_dict'):
+            
+            if hasattr(value, 'to_dict'):
                 return _repr.repr(value.to_dict('index')) # type: ignore
             
             return _repr.repr(value)
@@ -89,7 +94,7 @@ class Reference[T]:
             return _repr.repr(value)
 
 
-    def __repr__(self):
+    def __repr__(self) -> str:
 
         _size = self._get_size()
         _sample = self._get_sample()

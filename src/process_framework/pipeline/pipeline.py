@@ -15,19 +15,22 @@ from process_framework.pipeline.settings import SettingsBase
 
 
 def load_json(path:Path) -> dict:
+    """ deserialize a json file at `path` to a dict """
     return json.loads(path.read_text())
 
 
 def sql_engine_from_config(path:Path) -> Engine:
+    """ construct a sqlalchemy Engine from a json file at `path` """
     return create_engine(
         url=URL.create(**load_json(path))
     )
 
 
 class PipelineBase[TSettings:SettingsBase, TReferences:ReferencesBase, TClients:ClientsBase](ABC):
-    
+    """ base class for Pipelines """
     def __init__(self, argsv=None) -> None:
         logging.info('initializing pipeline')
+        
         logging.info('  initializing settings')
         self.settings = self.initialize_settings(argsv)
         
