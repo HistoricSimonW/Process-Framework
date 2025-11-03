@@ -1,26 +1,18 @@
 # stdlib
 import json
 import logging
-import os
-import dotenv
-
-from argparse import ArgumentParser, Namespace
 from pathlib import Path
-from types import SimpleNamespace
-from typing import Tuple, Type
-
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, fields
+from typing import Type
+from abc import abstractmethod, ABC
 
 # third-party
-from elasticsearch import Elasticsearch
-from geopandas import GeoDataFrame
-from pandas import DataFrame, Series
 from sqlalchemy import URL, Engine, create_engine
-from pydantic import BaseModel, ConfigDict
 
 # first-party (process_framework / process)
-from process_framework import Reference, Step
+from process_framework import Step
+from process_framework.pipeline.clients import ClientsBase
+from process_framework.pipeline.references import ReferencesBase
+from process_framework.pipeline.settings import SettingsBase
 
 
 def load_json(path:Path) -> dict:
@@ -32,30 +24,6 @@ def sql_engine_from_config(path:Path) -> Engine:
         url=URL.create(**load_json(path))
     )
 
-
-@dataclass
-class ReferencesBase(ABC):
-    
-    def preflight(self) -> None:
-        for field in fields(self):
-            if getattr(self, field.name) is None:
-                raise ValueError(f"Required reference {field} is not assigned")
-            
-
-@dataclass
-class ClientsBase(ABC):
-    
-    def preflight(self) -> None:
-        for field in fields(self):
-            if getattr(self, field.name) is None:
-                raise ValueError(f"Required reference {field} is not assigned")
-
-
-class SettingsBase(BaseModel, ABC):
-
-    model_config = ConfigDict(
-        extra='ignore'
-    )
 
 
 class PipelineBase[TSettings:SettingsBase, TReferences:ReferencesBase, TClients:ClientsBase](ABC):
@@ -81,27 +49,14 @@ class PipelineBase[TSettings:SettingsBase, TReferences:ReferencesBase, TClients:
         logging.info('initialization complete')
 
 
-    def get_args_from_environment(self, argsv=None) -> dict:
-        try:
-            from dotenv import load_dotenv
-            for fn in ('.env', '.env.local'):
-                load_dotenv(Path(fn), override=True)
-        except:
-            ...
-            
-        # try:
-        #     parser = ArgumentParser()
-        #     args = parser.parse_args(argsv).__dict__
-        # except:
-        #     args = dict()    
-
-        return dict() | os.environ #| args
-
-
     def initialize_settings(self, argsv=None) -> TSettings:
-        args:dict = self.get_args_from_environment(argsv)
-        return self.extract_settings(args)
+        settings_class = self.get_settings_class()
+        return settings_class.from_environment(argsv)
     
+    
+    @abstractmethod
+    def get_settings_class(self) -> Type[TSettings]:
+        ...
 
     @abstractmethod
     def extract_settings(self, args:dict) -> TSettings:
