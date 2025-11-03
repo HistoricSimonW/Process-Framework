@@ -10,7 +10,7 @@ class ModifyingStep[T](Step, ABC):
 
     @abstractmethod
     def transform(self, subject:T) -> T|None:
-        """ if this returns a value, it is assigned to subject_reference, otherwise it's assumed that the subject has been modified in-place """
+        """ perform a transformation of the provided `subject`, returning a value of the same type or None """
         pass
 
     def do(self):

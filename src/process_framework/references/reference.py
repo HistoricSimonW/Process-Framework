@@ -89,7 +89,6 @@ class Reference[T]:
             return _repr.repr(value)
 
 
-    
     def __repr__(self):
 
         _size = self._get_size()

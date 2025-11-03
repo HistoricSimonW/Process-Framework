@@ -1,0 +1,8 @@
+# Pipelines
+
+`Step`s and `Reference`s can be used to build processes independently of `Pipeline`s. 
+`Pipeline`s offer a structured framework for extracting settings from an environment, initializing `References` and `Clients` objects using those settings, then constructing a `list[Step]` using those objects. `Settings`, `References` and `Clients` are expected to be implemented from the provided `ABC`s.
+
+* `SettingsBase`: a pydantic v2 `BaseModel` to contain the required settings extracted from the environemnt. Can be configured to coerce types ('100' (str) -> 100 (int)). We're using a `BaseModel` here, because by default they ignore `extra` arguments. By default, `allow_arbitrary_types` is unset; usually settings will be scalar types.
+* `ReferencesBase` and `ClientsBase`: these are abstract (`ABC`) `dataclass`es; define permitted fields at def time; the `Pipeline` will assign values to those fields at `__init__`. If any `Reference`s need to refer to other `Reference`s, decline the dependent `Reference`s as `Optional` or `|None=None`, then in `Pipeline.initialize_references`, initialize the independent `Reference`s in the `References` constructor, then initialize the depentents ones afterwards, but before returning from `initialize_references`.
+* `load_json` and `sql_engine_from_config` are helper methods for deserializing json strings to `dict`s and `sqlalchemy` `Engine`s, respectively
