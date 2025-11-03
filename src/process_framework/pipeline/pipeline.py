@@ -2,7 +2,6 @@
 import json
 import logging
 from pathlib import Path
-from typing import Type
 from abc import abstractmethod, ABC
 
 # third-party
@@ -25,11 +24,11 @@ def sql_engine_from_config(path:Path) -> Engine:
     )
 
 
-
 class PipelineBase[TSettings:SettingsBase, TReferences:ReferencesBase, TClients:ClientsBase](ABC):
     
     def __init__(self, argsv=None) -> None:
         logging.info('initializing pipeline')
+        logging.info('  initializing settings')
         self.settings = self.initialize_settings(argsv)
         
         logging.info('  initializing references')
@@ -50,18 +49,16 @@ class PipelineBase[TSettings:SettingsBase, TReferences:ReferencesBase, TClients:
 
 
     def initialize_settings(self, argsv=None) -> TSettings:
+        """ extract a `Settings` model from an `args` dict passet in from the environment """
         settings_class = self.get_settings_class()
         return settings_class.from_environment(argsv)
     
     
     @abstractmethod
-    def get_settings_class(self) -> Type[TSettings]:
+    def get_settings_class(self) -> type[TSettings]:
+        """ get the type of the pipeline's Settings model """
         ...
 
-    @abstractmethod
-    def extract_settings(self, args:dict) -> TSettings:
-        """ extract a `Settings` model from an `args` dict passet in from the environment """
-        ...
 
     @abstractmethod
     def initialize_clients(self, settings: TSettings) -> TClients:
