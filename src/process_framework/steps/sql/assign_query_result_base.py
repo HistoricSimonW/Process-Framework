@@ -1,11 +1,11 @@
 from ...references.reference import Reference
 from ..assigning_step import AssigningStep
 from abc import ABC, abstractmethod
-import pandas as pd; from pandas import DataFrame, Series
+import pandas as pd; from pandas import DataFrame, Series, Index
 from sqlalchemy import Select, Engine, URL, create_engine, Connection
 from typing import Any, Mapping, Callable
 
-class GetSqlQueryResultBase[T:(DataFrame, Series)](AssigningStep[T], ABC):
+class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](AssigningStep[T], ABC):
     """ base class for Steps that assign the result of Sql queries to `assign_to`"""
 
     def __init__(self, assign_to:Reference[T], *, 

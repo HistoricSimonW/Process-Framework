@@ -20,7 +20,7 @@ class DeleteById(Step):
     def do(self):
         _ids = self.subject.get_value()
         assert isinstance(_ids, Iterable)
-        _ids = list(_ids)
+        # _ids = list(_ids)
 
         result = bulk(
             client=self.elasticsearch,
