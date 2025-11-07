@@ -3,7 +3,7 @@ from typing import Any, Mapping, Callable
 from ...references.reference import Reference
 from ...references.dataframe.reference_column import ColumnReference
 from .assign_query_result_base import GetSqlQueryResultBase
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, Index
 from abc import ABC, abstractmethod
 from sqlalchemy import Select, MetaData, Engine, TextClause, ColumnElement, Table, Column, Connection, insert
 from sqlalchemy.schema import CreateTable, DropTable
@@ -49,9 +49,9 @@ class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
             assert isinstance(value, list)# or value is None
             return value
 
-        if (isinstance(_ids, Reference) and _ids.is_instance_of(Series)) or isinstance(_ids, ColumnReference):
+        if (isinstance(_ids, Reference) and _ids.is_instance_of((Series, Index))) or isinstance(_ids, ColumnReference):
             value = _ids.get_value()
-            if isinstance(value, Series):
+            if isinstance(value, (Series, Index)):
                 return value.to_list()
             return None
 
