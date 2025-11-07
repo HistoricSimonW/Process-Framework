@@ -17,7 +17,7 @@ MAX_IN_VALUES_LEN = 10_000
 TEMP_TABLE_NAME = '#TEMP_IDS'
 TEMP_TABLE_ID = '_id'
 
-class GetOrmQueryResult[T:(DataFrame, Series)](GetSqlQueryResultBase[T], ABC):
+class GetOrmQueryResult[T:(DataFrame, Series, Index)](GetSqlQueryResultBase[T], ABC):
     """ get the result of a query defined using the sqlalchemy ORM"""
 
     def __init__(self, assign_to: Reference[T], *, engine: Engine | None = None, url_create_kwargs: dict | None = None, column_mapper:dict|Mapping|Callable[[str], str]|None=None, index: Any | None=None,
