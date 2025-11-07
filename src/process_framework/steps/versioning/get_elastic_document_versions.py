@@ -13,7 +13,8 @@ class GetElasticDocumentVersions(AssigningStep[Index]):
                  *fields:tuple[str, str|type]|str,
                  default_field_type:str|type = str,
                  include_id:bool=True,
-                 overwrite:bool=True):
+                 overwrite:bool=True,
+                 query:dict|None=None):
 
         super().__init__(assign_to, overwrite=overwrite)
         self.elasticsearch = elasticsearch
@@ -21,6 +22,7 @@ class GetElasticDocumentVersions(AssigningStep[Index]):
         self.fields = fields
         self.default_field_type=default_field_type
         self.include_id=include_id
+        self.query=query
 
 
     def get_source(self) -> list[str]:
@@ -59,7 +61,8 @@ class GetElasticDocumentVersions(AssigningStep[Index]):
         scan_:Iterable[dict[str, Any]] = scan(
             client=self.elasticsearch,
             index=self.index,
-            source=source
+            source=source,
+            query=self.query
         )
 
         return self.index_from_scan_(scan_)
