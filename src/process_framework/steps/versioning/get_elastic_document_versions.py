@@ -8,9 +8,11 @@ import logging
 
 class GetElasticDocumentVersions(AssigningStep[Index]):
     """ scan an elasticsearch index, producing a `MultiIndex` of `fields`, which can be compared with another `MultiIndex` to detect changes """
-    def __init__(self, assign_to: Reference[Index], elasticsearch:Elasticsearch, 
-                 index:str,
+    def __init__(self, 
                  *fields:tuple[str, str|type]|str,
+                 assign_to: Reference[Index], 
+                 elasticsearch:Elasticsearch, 
+                 index:str,
                  default_field_type:str|type = str,
                  include_id:bool=True,
                  overwrite:bool=True,
