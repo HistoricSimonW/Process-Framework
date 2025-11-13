@@ -1,6 +1,7 @@
 from .step import Step
 from itertools import count
 import logging
+from time import sleep
 
 class Retry(Step):
     # TODO: catch certain Exceptions, re-raise the rest
@@ -19,8 +20,10 @@ class Retry(Step):
                 self.step.do()
                 break
             except Exception as e:
-                logging.warning(f'retry: {i}: {e}')
+                logging.warning(f'retry: {i}: {e} (sleeping for {self.retry_backoff}s)')
 
                 # if we're on the last retry, raise the exception
                 if i == (self.max_retries - 1):
                     raise e
+                
+                sleep(self.retry_backoff)
