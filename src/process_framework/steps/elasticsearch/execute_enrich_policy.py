@@ -2,7 +2,6 @@ from ..step import Step
 from elasticsearch.client import Elasticsearch
 from elasticsearch import NotFoundError
 from logging import info
-from itertools import count
 from time import sleep
 
 # https://elasticsearch-py.readthedocs.io/en/v8.2.2/api.html?highlight=execute#elasticsearch.client.EnrichClient.execute_policy:~:text=the%20enrich%20policy-,execute,_policy,-(*%2C%20name%3A%20str
@@ -18,7 +17,7 @@ class ExecutePolicy(Step):
 
     def do(self):
         enrich = self.elasticsearch.enrich
-        assert enrich.get_policy(name=self.policy)
+        
         response = enrich.execute_policy(
             name=self.policy,
             wait_for_completion=False
