@@ -12,6 +12,7 @@ from process_framework import Step
 from process_framework.pipeline.clients import ClientsBase
 from process_framework.pipeline.references import ReferencesBase
 from process_framework.pipeline.settings import SettingsBase
+from process_framework.exceptions import EarlyEscape
 
 
 def load_json(path:Path) -> dict:
@@ -86,9 +87,17 @@ class PipelineBase[TSettings:SettingsBase, TReferences:ReferencesBase, TClients:
 
 
     def do(self):
+        """ execute the pipeline by iterating through its steps and doing them, detecting and handling any managed `EarlyEscape`s"""
+        logging.info(f"Pipeline started")
         for step in self.steps:
             logging.info(type(step).__name__)
-            step.do()
+            try:
+                step.do()
+            except EarlyEscape as e:
+                logging.info(f"Pipeline terminated early on `Step` {type(step).__name__} with `EarlyEscape` exception {e}")
+                return
+            
+        logging.info(f"Pipeline completed")
 
 
     def log_steps(self):

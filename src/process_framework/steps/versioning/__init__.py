@@ -1,4 +1,4 @@
-from .assert_any_changes import AssertAnyChanges, NoChangesToUpdateException
+from .assert_any_changes import AssertAnyChanges, NoChangesToUpdate
 from .get_elastic_document_versions import GetElasticDocumentVersions
 from .get_sql_document_versions import GetSqlDocumentVersions
 from .changes import DetectAdditions, DetectDeletions, DetectUpdates

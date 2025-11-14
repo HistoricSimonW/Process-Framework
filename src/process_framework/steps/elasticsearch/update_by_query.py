@@ -17,7 +17,6 @@ class UpdateByQuery(Step):
         self.await_task_interval = await_task_interval
         self.await_task_timeout = await_task_timeout
 
-
     
     def do(self):
         response = self.elasticsearch.update_by_query(
@@ -33,7 +32,7 @@ class UpdateByQuery(Step):
         
         task = response.body['task']
 
-                # for 0 .. await_task_timeout, try to get the task
+        # for 0 .. await_task_timeout, try to get the task
         #   if the task exists, the task is running
         #   if the task is not found, it's finished
         for _ in range(self.await_task_timeout):
