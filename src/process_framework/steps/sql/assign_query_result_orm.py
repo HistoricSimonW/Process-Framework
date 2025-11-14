@@ -21,11 +21,11 @@ class GetOrmQueryResult[T:(DataFrame, Series, Index)](GetSqlQueryResultBase[T], 
     """ get the result of a query defined using the sqlalchemy ORM"""
 
     def __init__(self, assign_to: Reference[T], *, engine: Engine | None = None, url_create_kwargs: dict | None = None, column_mapper:dict|Mapping|Callable[[str], str]|None=None, index: Any | None=None,
-                 limit:int|None=None, _ids:list|Reference[list]|Reference[Series]|None=None, where:str|None=None, drop_index_column:bool=True, overwrite:bool=True):
+                 limit:int|None=None, _ids:list|Reference[list]|Reference[Series]|Reference[Index]|None=None, where:str|None=None, drop_index_column:bool=True, overwrite:bool=True):
         super().__init__(assign_to, engine=engine, url_create_kwargs=url_create_kwargs, column_mapper=column_mapper, index=index, drop_index_column=drop_index_column, overwrite=overwrite)
         # qualifiers
         self.limit:int|None=limit
-        self._ids:list|Reference[list]|Reference[Series]|None = _ids
+        self._ids:list|Reference[list]|Reference[Series]|Reference[Index]|None = _ids
         self.where:str|None = where
 
         # metadata (do this here so we fail early, rather than during pipeline execution)
