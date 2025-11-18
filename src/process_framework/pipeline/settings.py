@@ -13,27 +13,18 @@ class SettingsBase(BaseModel, ABC):
     @classmethod
     def __get_env_fns__(cls) -> Sequence[str]:
         return (".env", ".env.local")
-
-
+    
     @classmethod
     def __add_args__(cls, parser: ArgumentParser) -> None: 
         """ allow subclasses to get args from an argparser; noop by default"""
-        ...
+        # this can be overwritten to add more or different arguments
+        # .env
+        parser.add_argument('--env-file', type=Path, help='Path to a .env file (required)', default=[], action='append')
 
 
     @classmethod
     def __get_args_from_environment__(cls, args: Sequence[str] | None = None) -> dict:
-        # get args from a .env
-        try:
-            from dotenv import load_dotenv
-
-            for fn in cls.__get_env_fns__():
-                path = Path(fn)
-                if path.exists():
-                    load_dotenv(path, override=True)
-        except Exception:
-            ...
-
+        
         # get args from cli
         try:
             parser = ArgumentParser()
@@ -42,6 +33,18 @@ class SettingsBase(BaseModel, ABC):
             cli = {k: v for k, v in vars(ns).items() if v is not None}
         except Exception:
             cli = dict()
+
+        # get args from a .env
+        try:
+            from dotenv import load_dotenv
+            # try .envs specified in the cli, else the defaults
+            for fn in cli.get('env_file') or cls.__get_env_fns__():
+                path = Path(fn)
+                if path.exists():
+                    load_dotenv(path, override=True)
+        except Exception:
+            ...
+
 
         # overwrite environ with cli args
         return dict(os.environ) | cli

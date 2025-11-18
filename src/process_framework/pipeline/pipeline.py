@@ -1,3 +1,16 @@
+# """"""""""""""""""""""""""""""""""""""""""""""""""""" #
+#   This is the base class for Pipelines                #
+#                                                       #
+#   A pipeline consists of a series of `Steps`          #
+#                                                       #
+#   Pipelines are configured using Settings             #
+#       passed in from their environment in a .env      #
+#                                                       #
+#   Pipelines can take CLI args                         #
+#       if their settings are configured to read them   #
+#                                                       #
+# """"""""""""""""""""""""""""""""""""""""""""""""""""" #
+
 # stdlib
 import json
 import logging
@@ -29,6 +42,7 @@ def sql_engine_from_config(path:Path) -> Engine:
 
 class PipelineBase[TSettings:SettingsBase, TReferences:ReferencesBase, TClients:ClientsBase](ABC):
     """ base class for Pipelines """
+
     def __init__(self, argsv=None) -> None:
         logging.info('initializing pipeline')
         
@@ -53,7 +67,7 @@ class PipelineBase[TSettings:SettingsBase, TReferences:ReferencesBase, TClients:
 
 
     def initialize_settings(self, argsv=None) -> TSettings:
-        """ extract a `Settings` model from an `args` dict passet in from the environment """
+        """ extract a `Settings` model from an `argsv` list passed in (by a CLI) and the environment """
         settings_class = self.get_settings_class()
         return settings_class.from_environment(argsv)
     
