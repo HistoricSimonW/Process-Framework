@@ -26,6 +26,10 @@ from abc import ABC, abstractmethod
 class CliBase[TPipeline:PipelineBase](ABC):
     
     def main(self, argsv:Sequence[str]|None=None) -> int:
+        # if argsv haven't been passed in, get them from sys
+        if argsv is None:
+            argsv = sys.argv[1:]
+
         # parse args for cli
         parser = ArgumentParser()
         self.add_args(parser)
