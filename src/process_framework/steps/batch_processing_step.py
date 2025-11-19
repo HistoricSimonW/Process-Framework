@@ -6,11 +6,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 import logging
 
-# TIn = TypeVar("TIn")
-# TBatch = TypeVar("TBatch")
-# TOut = TypeVar("TOut")
 
-    
 @dataclass(slots=True)
 class _Retry[TBatch]:
     i:int
@@ -89,6 +85,12 @@ class BatchProcessor[TIn, TBatch](Step):
                 to_retry.append(retry)
 
         logging.info('done!')
+    
+
+    def preflight(self):
+        """ perform preflight for nested steps """
+        for step in self.steps:
+            step.preflight()
 
 
 class BatchProcessDataFrame(BatchProcessor[DataFrame, DataFrame]):
