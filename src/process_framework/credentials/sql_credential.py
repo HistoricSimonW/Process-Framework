@@ -14,10 +14,16 @@ class SqlCredential(ConstructingCredentialModel[Engine]):
 
     @classmethod
     def __client_from_kwargs__(cls, **kwargs) -> Engine:
-        args = {k:v for k, v in kwargs.items() if k not in {'query_driver'}}
+        query_args = {'query_driver', 'query_trust_server_certificate'}
+        args = {k:v for k, v in kwargs.items() if k not in query_args}
+
+        if any(q in kwargs for q in query_args):
+            args['query'] = dict()
+
         if 'query_driver' in kwargs:
-            args['query'] = dict(driver=kwargs['query_driver'])
-            if kwargs.get('query_trust_server_certificate'):
-                args['query']['TrustServerCertificate'] = kwargs['query_trust_server_certificate']
+            args['query']['driver']=kwargs['query_driver']
+        
+        if 'query_trust_server_certificate' in kwargs:
+            args['query']['TrustServerCertificate'] = kwargs['query_trust_server_certificate']
         url = URL.create(**args)
         return create_engine(url)
