@@ -55,18 +55,13 @@ class SettingsBase(BaseModel, ABC):
         else:
             arg_type = str
 
-        # default from the model, if any
-        default = field.default
-
         # simple bool handling: --delete-changes sets it to True
         if arg_type is bool:
-            # If you need both true/false flags, you could add a second flag here.
             parser.add_argument(
                 flag,
                 dest=name,
                 action='store_true',
-                default=default if default is not None else False,
-                help=field.description or f"Set {name}",
+                help=field.description or f"Set {name} to True",
             )
             return
 
