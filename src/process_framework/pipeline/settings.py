@@ -24,7 +24,7 @@ class SettingsBase(BaseModel, ABC):
 
     @classmethod
     def __get_args_from_environment__(cls, args: Sequence[str] | None = None) -> dict:
-        
+        """ construct a `Settings` object from an .env file, or a sequence of `args` """
         # get args from cli
         try:
             parser = ArgumentParser()
@@ -43,6 +43,9 @@ class SettingsBase(BaseModel, ABC):
                 path = Path(fn)
                 if path.exists():
                     load_dotenv(path, override=True)
+        except ModuleNotFoundError as e:
+            if 'dotenv' in str(e):
+                logging.warning(f'an `env_file` was parsed from `args`, but module `dotenv` was not found ({e})')
         except Exception:
             ...
 
