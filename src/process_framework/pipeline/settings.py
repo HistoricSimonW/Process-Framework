@@ -4,6 +4,7 @@ from pathlib import Path
 from abc import ABC
 from typing import Sequence, Self, Optional, Annotated, get_origin, get_args, Union, Any
 from pydantic import BaseModel, ConfigDict
+from pydantic_core import PydanticUndefined
 from pydantic.fields import FieldInfo
 import logging
 
@@ -75,15 +76,16 @@ class SettingsBase(BaseModel, ABC):
             "help": field.description or f"Override {name}",
         }
 
+        # only set default if it is NOT PydanticUndefined
+        if field.default is not PydanticUndefined:
+            kwargs["default"] = field.default
+
         # int/float/path/str, etc
         if arg_type in (int, float, str, Path):
             kwargs["type"] = arg_type
         else:
             # fallback: treat as string
             kwargs["type"] = str
-
-        if default is not None:
-            kwargs["default"] = default
 
         parser.add_argument(flag, **kwargs)
 
