@@ -18,7 +18,7 @@ def empty_str_to_none(v:str) -> str|None:
 
 
 class SettingsBase(BaseModel, ABC):
-
+    """ base class for Pipeline settings; supports adding arguments to cli argparser """
     model_config = ConfigDict(extra="ignore")
 
     @classmethod
@@ -75,12 +75,8 @@ class SettingsBase(BaseModel, ABC):
         if field.default is not PydanticUndefined:
             kwargs["default"] = field.default
 
-        # int/float/path/str, etc
-        if arg_type in (int, float, str, Path):
-            kwargs["type"] = arg_type
-        else:
-            # fallback: treat as string
-            kwargs["type"] = str
+        # set type to int/float/path/str if specified, fall back to str
+        kwargs['type'] = arg_type if arg_type in (int, float, str, Path) else str
 
         parser.add_argument(flag, **kwargs)
 
@@ -88,8 +84,8 @@ class SettingsBase(BaseModel, ABC):
     @classmethod
     def __add_args__(cls, parser: ArgumentParser) -> None: 
         """ allow subclasses to get args from an argparser; noop by default"""
-        # this can be overwritten to add more or different arguments
-        # .env
+        # this can be overwritten to add more or different arguments,
+        #   but by default it adds `--env-file` and the 'model_fields' of the 'cls' to the ArgumentParser
         parser.add_argument('--env-file', type=Path, help='Path to a .env file (required)', default=[], action='append')
 
         for name, field in cls.model_fields.items():
@@ -129,5 +125,6 @@ class SettingsBase(BaseModel, ABC):
 
     @classmethod
     def from_environment(cls:type[Self], args=None) -> Self:
+        """ construct an instance of `cls` from arguments in the environment (args and .env vars) """
         args = cls.__get_args_from_environment__(args)
         return cls(**args)
