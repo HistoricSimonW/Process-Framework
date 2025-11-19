@@ -61,6 +61,7 @@ class SettingsBase(BaseModel, ABC):
                 flag,
                 dest=name,
                 action='store_true',
+                default=None,
                 help=field.description or f"Set {name} to True",
             )
             return
