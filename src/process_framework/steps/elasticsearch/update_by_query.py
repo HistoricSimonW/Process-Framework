@@ -90,7 +90,10 @@ class UpdateByQuery(Step):
         #   if the task is not found, it's finished
         for _ in range(self.await_task_timeout):
             try:
-                self.elasticsearch.tasks.get(task_id=task)
+                r = self.elasticsearch.tasks.get(task_id=task)
+                if r.body.get('completed'):
+                    info(f'{r.body}')
+                    break
             except NotFoundError:
                 break
             sleep(self.await_task_interval)
