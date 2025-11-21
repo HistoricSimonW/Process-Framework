@@ -8,6 +8,8 @@ from logging import info
 from time import sleep
 from pandas import Index, Series
 
+MAX_ALLOWABLE_TERMS = 65536
+
 # https://elasticsearch-py.readthedocs.io/en/v8.2.2/api.html?highlight=execute#elasticsearch.Elasticsearch.update_by_query
 class UpdateByQuery(Step):
     """ perform an update-by-query operation on an index """
@@ -60,10 +62,13 @@ class UpdateByQuery(Step):
         
         _ids = self.get_ids()
 
+        if (_ids is not None) and len(_ids) > MAX_ALLOWABLE_TERMS: # the max allowable `terms` is 65536:
+            info(f"Length of `_ids` exceeds Elastic's max allowable limit of {MAX_ALLOWABLE_TERMS}, returning a `None` query")
+            return None
+        
         return {'terms':{self._ids_as_terms_field:_ids}} if self._ids_as_terms_field else {'ids':{'values':_ids}}
         
         
-    
     def do(self):
         query = self.get_query()
 
