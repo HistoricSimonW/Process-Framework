@@ -16,7 +16,8 @@ class UpdateByQuery(Step):
     # TODO : build option to pass and do a query
     def __init__(self, elasticsearch:Elasticsearch, index:str|Sequence[str], pipeline:str, 
                  query:dict|None=None, _ids:list|Reference[list]|Reference[Series]|Reference[Index]|None=None,
-                 execute_without_query:bool=True, _ids_as_terms_field:str|None=None,   # if a query isn't provided, or if _ids aren't specified, run the pipeline over the whole index
+                 execute_without_query:bool=True, 
+                 _ids_as_terms_field:str|None=None,   # if a query isn't provided, or if _ids aren't specified, run the pipeline over the whole index
                  *, await_task:bool=True, await_task_interval:float=1, await_task_timeout:int=120) -> None:
         self.elasticsearch = elasticsearch
         self.index = index
@@ -108,4 +109,4 @@ class UpdateByQuery(Step):
     def preflight(self):
         assert self.elasticsearch.info()
         assert self.elasticsearch.indices.exists(index=self.index)
-        assert self.elasticsearch.ingest.get_pipeline(id=self.pipeline)
+        assert self.pipeline in self.elasticsearch.ingest.get_pipeline(id=self.pipeline)
