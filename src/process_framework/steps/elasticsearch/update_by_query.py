@@ -18,7 +18,9 @@ class UpdateByQuery(Step):
                  query:dict|None=None, _ids:list|Reference[list]|Reference[Series]|Reference[Index]|None=None,
                  execute_without_query:bool=True, 
                  _ids_as_terms_field:str|None=None,   # if a query isn't provided, or if _ids aren't specified, run the pipeline over the whole index
-                 *, await_task:bool=True, await_task_interval:float=1, await_task_timeout:int=120) -> None:
+                 *, await_task:bool=True, await_task_interval:float=1, await_task_timeout:int=120,
+                 update_by_query_kwargs:dict|None=None
+                 ) -> None:
         self.elasticsearch = elasticsearch
         self.index = index
         self.pipeline = pipeline
@@ -31,6 +33,8 @@ class UpdateByQuery(Step):
         self.await_task = await_task
         self.await_task_interval = await_task_interval
         self.await_task_timeout = await_task_timeout
+
+        self.update_by_query_kwargs = update_by_query_kwargs or dict()
 
 
     def get_ids(self) -> list|None:
@@ -81,7 +85,8 @@ class UpdateByQuery(Step):
             index=self.index,
             pipeline=self.pipeline,
             wait_for_completion=False,
-            query=query
+            query=query,
+            **self.update_by_query_kwargs
         )
 
         info(f'performing update-by-query {self.pipeline}:{self.index}:({response})')

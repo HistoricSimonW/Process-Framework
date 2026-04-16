@@ -17,21 +17,26 @@ class DeleteById(Step):
         self.assert_index_exists = assert_index_exists
 
 
+    def gen_actions(self, _ids:Iterable[str]) -> Iterable[dict]:
+        """Yield bulk delete actions for the supplied document IDs."""
+        for _id in _ids:
+            yield {
+                '_index':self.index,
+                '_op_type': 'delete',
+                '_id': _id,
+            }
+
+
     def do(self):
         _ids = self.subject.get_value()
         assert isinstance(_ids, Iterable)
-        # _ids = list(_ids)
+
+        actions = self.gen_actions(_ids)
 
         result = bulk(
             client=self.elasticsearch,
             index=self.index,
-            actions=(
-                {
-                    '_op_type': 'delete',
-                    '_id': _id,
-                }
-                for _id in _ids
-            )
+            actions=actions
         )
 
         if not isinstance(result, list):
