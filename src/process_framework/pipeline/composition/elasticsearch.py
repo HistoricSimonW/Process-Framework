@@ -6,7 +6,9 @@ class ElasticsearchClientArgs(BaseModel):
     api_key:str
 
     def get_client(self) -> Elasticsearch:
-        return Elasticsearch(**self.model_dump())
+        return Elasticsearch(**self.model_dump(
+            include=set(ElasticsearchClientArgs.model_fields.keys()),
+        ))
 
     
 class ElasticsearchIndexArgs(BaseModel):

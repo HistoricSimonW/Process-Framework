@@ -15,7 +15,13 @@ class DatabaseArgs(BaseModel):
     query:EngineQueryArgs
 
     def get_url(self) -> URL:
-        return URL.create(**self.model_dump(by_alias=True, exclude_none=True))
+        return URL.create(
+            **self.model_dump(
+                include=set(DatabaseArgs.model_fields.keys()),
+                by_alias=True, 
+                exclude_none=True
+            )
+        )
 
     def get_engine(self) -> Engine:
         url = self.get_url()

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from elasticsearch import Elasticsearch
-from .core import StepMixin
+from ..mixins.core import StepMixin
 
 @dataclass
 class HasElasticsearch(StepMixin):

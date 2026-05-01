@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, KW_ONLY
 from ..lifecycle.preflight import Preflightable
-from .interfaces.core import IGenerateValue, ITransformValue
+from .composition.core import IGenerateValue, ITransformValue
 from .mixins.core import HasOutput, HasInput
 
 @dataclass

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from .interfaces.core import IGettable, ISettable, ITyped
-from ..composition.mixins.logging import HasLogger
+from .composition.core import IGettable, ISettable, ITyped
+from ..composition.core.logging import HasLogger
 
 import reprlib
 

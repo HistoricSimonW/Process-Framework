@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
-from .interfaces.core import IGettable, ISettable, ITyped
-from ..composition.mixins.logging import HasLogger
+from .composition.core import IGettable, ISettable, ITyped
+from ..composition.core.logging import HasLogger
 from typing import Iterable
 
 @dataclass(slots=True)
@@ -32,7 +32,7 @@ class SetAccumulator[T](IGettable[Iterable[T]], ISettable[Iterable], HasLogger):
             pre = len(self.values)
             self.values.update((t for t in value if isinstance(t, self.item_type)))
             post = len(self.values)
-        self._info(f'{pre} -> {post}')
+            self._info(f'{pre} -> {post}')
 
     def get_value(self) -> set[T]:
         return self.values

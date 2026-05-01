@@ -1,5 +1,5 @@
 from abc import ABC
-from ..composition.mixins.logging import HasLogger
+from ..composition.core.logging import HasLogger
 
 class PreflightTerminal:
     """terminal no-op for preflight chains."""

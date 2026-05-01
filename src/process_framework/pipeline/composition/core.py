@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
-class EtlOpsArgs(BaseModel):
+class CrudArgs(BaseModel):
+    """ creations, updates, deletions """
     creations:bool
     updates:bool
     deletions:bool

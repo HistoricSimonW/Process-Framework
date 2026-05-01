@@ -7,5 +7,5 @@
 # from .retry_step import Retry
 
 from .step import Step, ModifyingStep, AssigningStep, TransformingStep
-from .interfaces.core import IGenerateValue, ITransformValue
+from .composition.core import IGenerateValue, ITransformValue
 from .mixins.core import HasInput, HasOutput, HasReference

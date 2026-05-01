@@ -1,8 +1,8 @@
-from .core import StepMixin
+from ..mixins.core import StepMixin
 from sqlalchemy import Engine, Select, text, select
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from ...references.interfaces.core import IGettable
+from ...references.composition.core import IGettable
 from typing import Iterable, Mapping
 from pandas import DataFrame
 import pandas as pd
