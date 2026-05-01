@@ -1,4 +1,4 @@
-from ...references.reference import Reference
+from ...references.reference_ import Reference
 from ..transforming_step import TransformingStep
 from .document import Document
 from pandas import DataFrame, Series

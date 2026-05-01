@@ -1,2 +1,2 @@
-from .reference import Reference, _repr
-from .dataframe import ColumnReference, IndexReference
+from .reference import Reference
+from .interfaces.core import IGettable, ISettable, ITyped

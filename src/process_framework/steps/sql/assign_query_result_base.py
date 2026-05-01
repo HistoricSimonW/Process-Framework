@@ -1,4 +1,4 @@
-from ...references.reference import Reference
+from ...references.reference_ import Reference
 from ..assigning_step import AssigningStep
 from abc import ABC, abstractmethod
 import pandas as pd; from pandas import DataFrame, Series, Index

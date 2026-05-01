@@ -1,4 +1,4 @@
-from ...references.reference import Reference
+from ...references.reference_ import Reference
 from ..assigning_step import AssigningStep
 from pandas import DataFrame, Series
 from elasticsearch.client import Elasticsearch

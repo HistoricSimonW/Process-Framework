@@ -1,6 +1,6 @@
 from types import TracebackType
 from typing import Any, Mapping, Callable
-from ...references.reference import Reference
+from ...references.reference_ import Reference
 from ...references.dataframe.reference_column import ColumnReference
 from .assign_query_result_base import GetSqlQueryResultBase
 from pandas import DataFrame, Series, Index
@@ -10,7 +10,7 @@ from sqlalchemy.schema import CreateTable, DropTable
 from itertools import batched
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
-from process_framework.references.reference import _repr
+from process_framework.references.reference_ import _repr
 import logging
 
 MAX_IN_VALUES_LEN = 10_000

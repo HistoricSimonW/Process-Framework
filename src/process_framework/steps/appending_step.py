@@ -1,6 +1,6 @@
-from .step import Step
+from .step_ import Step
 from ..references import Reference
-from .step import Step
+from .step_ import Step
 from ..references import Reference
 
 class Append(Step):

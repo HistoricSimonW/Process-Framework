@@ -1,4 +1,4 @@
-from process_framework.references.reference import Reference
+from process_framework.references.reference_ import Reference
 from ..transforming_step import TransformingStep
 from abc import ABC, abstractmethod
 from requests import Session, Response

@@ -1,5 +1,5 @@
-from ...references.reference import Reference
-from ..step import Step
+from ...references.reference_ import Reference
+from ..step_ import Step
 from .document import Document
 from pandas import Series
 from elasticsearch.client import Elasticsearch

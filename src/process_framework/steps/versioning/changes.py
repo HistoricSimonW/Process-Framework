@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from pandas import Index, MultiIndex
 from process_framework import AssigningStep
-from process_framework.references.reference import Reference
+from process_framework.references.reference_ import Reference
 
 
 class DetectAdditions(AssigningStep[Index]):

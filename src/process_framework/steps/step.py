@@ -1,12 +1,44 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, KW_ONLY
+from ..lifecycle.preflight import Preflightable
+from .interfaces.core import IGenerateValue, ITransformValue
+from .mixins.core import HasOutput, HasInput
 
-class Step(ABC):
-    
+@dataclass
+class Step(Preflightable, ABC):
+    """abstract pipeline step with preflight and execution lifecycle."""
+    def preflight(self) -> None:
+        self._info('base preflight')
+        super().preflight()
+
     @abstractmethod
     def do(self):
-        pass
+        ...
+
+
+@dataclass
+class AssigningStep[T](Step, HasOutput[T], IGenerateValue[T]):
+    """step that assigns a generated value to its output."""
+    _ : KW_ONLY
+    overwrite:bool=True
+    def do(self):
+        value = self.generate_value()
+        if not self.output_.has_value() or self.overwrite:
+            self.output_.set_value(value)
     
 
-    def preflight(self):
-        """ perform any preflight assertions; can throw errors or log warnings or do nothing """
+@dataclass
+class TransformingStep[TIn, TOut](AssigningStep[TOut], HasInput[TIn], ITransformValue[TIn, TOut]):
+    """step that generates output by transforming its input."""
+    def generate_value(self) -> TOut | None:
+        return self.transform_value(self.input_.get_value())
+
+    @abstractmethod
+    def transform_value(self, input_: TIn) -> TOut:
         ...
+
+
+@dataclass
+class ModifyingStep[T](TransformingStep[T, T]):
+    """specialised transforming step where input and output types are the same."""
+    ...

@@ -1,4 +1,4 @@
-from ..step import Step
+from ..step_ import Step
 from elasticsearch.client import Elasticsearch
 from elasticsearch import NotFoundError
 from logging import info

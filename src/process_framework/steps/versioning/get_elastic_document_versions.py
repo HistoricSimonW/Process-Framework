@@ -1,4 +1,4 @@
-from process_framework.references.reference import Reference
+from process_framework.references.reference_ import Reference
 from process_framework.steps import AssigningStep
 from pandas import Series, Index, DataFrame, MultiIndex
 from elasticsearch import Elasticsearch

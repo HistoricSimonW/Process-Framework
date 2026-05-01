@@ -1,4 +1,4 @@
-from ..reference import Reference
+from ..reference_ import Reference
 from pandas import Series, DataFrame
 from typing import Iterable
 
