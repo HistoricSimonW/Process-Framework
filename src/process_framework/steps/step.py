@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, KW_ONLY
 from ..lifecycle.preflight import Preflightable
-from .composition.core import IGenerateValue, ITransformValue
-from .mixins.core import HasOutput, HasInput
+from .composition.core import IGenerateValue, ITransformValue, HasOutput, HasInput
 
 @dataclass
 class Step(Preflightable, ABC):
@@ -22,8 +21,8 @@ class AssigningStep[T](Step, HasOutput[T], IGenerateValue[T]):
     _ : KW_ONLY
     overwrite:bool=True
     def do(self):
-        value = self.generate_value()
         if not self.output_.has_value() or self.overwrite:
+            value = self.generate_value()
             self.output_.set_value(value)
     
 

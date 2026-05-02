@@ -48,7 +48,7 @@ class CliBase[TPipeline:PipelineBase](ABC):
         
     def initialize_pipeline(self, argsv:Sequence[str]|None) -> TPipeline:
         cls = self.get_pipeline_class()
-        return cls(argsv)
+        return cls.from_environment(argsv)
     
 
     @abstractmethod

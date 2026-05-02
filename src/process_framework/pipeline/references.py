@@ -1,12 +1,8 @@
 # stdlib
 from abc import ABC
-from dataclasses import dataclass, fields
-
+from dataclasses import dataclass
+from .composition.core import ContainerBase
 
 @dataclass
-class ReferencesBase(ABC):
-
-    def preflight(self) -> None:
-        for field in fields(self):
-            if getattr(self, field.name) is None:
-                raise ValueError(f"Required reference {field} is not assigned")
+class ReferencesBase(ContainerBase, ABC):
+    """base class for reference containers holding pipeline state."""

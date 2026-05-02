@@ -1,17 +1,13 @@
-from .step_ import Step
+from .step import Step
 from itertools import count
 import logging
 from time import sleep
 
 class Retry(Step):
-    # TODO: catch certain Exceptions, re-raise the rest
     """ retry a `step` up to `max_retries` times, waiting `retry_backoff` seconds between tries """
-    def __init__(self, step:Step, max_retries:int=10, retry_backoff:int=15) -> None:
-        super().__init__()
-        self.step = step
-        self.max_retries = max_retries
-        self.retry_backoff=retry_backoff
-
+    step:Step
+    max_retries:int
+    retry_backoff:int
 
     def do(self):
         for i in range(self.max_retries):

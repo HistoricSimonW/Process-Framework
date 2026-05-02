@@ -3,9 +3,9 @@ from abc import abstractmethod
 from pandas import DataFrame
 from collections import deque
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, KW_ONLY
 import logging
-
+from .composition.core import HasInput
 
 @dataclass(slots=True)
 class _Retry[TBatch]:
@@ -14,20 +14,14 @@ class _Retry[TBatch]:
     try_:int = 0
 
 
-class BatchProcessor[TIn, TBatch](Step):
-    def __init__(
-            self, 
-            subject: Reference[TIn], 
-            batch: Reference[TBatch],
-            steps:list[Step], 
-            *, 
-            batch_size:int=1000
-        ):
-        self.subject = subject
-        self.batch = batch
-        self.steps = steps
-        self.batch_size = batch_size
-        self.max_retries = 25
+@dataclass
+class BatchProcessor[TIn, TBatch](Step, HasInput[TIn]):
+    """ apply a list of steps to a batch """
+    batch:Reference[TBatch]
+    steps:list[Step]
+    batch_size:int
+    _ : KW_ONLY
+    max_retries:int = 10
 
 
     @abstractmethod
@@ -37,22 +31,22 @@ class BatchProcessor[TIn, TBatch](Step):
 
     def on_batch_error(self, retry: _Retry[TBatch], exc: Exception) -> None:
         # default: just log; override in subclass for backoff, metrics, etc.
-        logging.warning(f"batch {retry.i} failed (try={retry.try_}): {exc}")
+        self._warn(f"batch {retry.i} failed (try={retry.try_}): {exc}")
 
 
     def handle_batch(self, batch:TBatch) -> None:
-        self.batch.set(batch)
+        self.batch.set_value(batch)
         try:
             for step in self.steps:
                 step.do()
         finally:
             # clear the batch on successful completion or on error
-            self.batch.set(None)
+            self.batch.set_value(None)
 
 
     def do(self) -> None:
         # get the subject; throw an error if it's not available
-        subject = self.subject.get_value()
+        subject = self.input_.get_value()
 
         # generated an enumerated iterable of batches
         batches = enumerate(self.gen_batches(subject))
@@ -93,10 +87,8 @@ class BatchProcessor[TIn, TBatch](Step):
             step.preflight()
 
 
+@dataclass
 class BatchProcessDataFrame(BatchProcessor[DataFrame, DataFrame]):
-    def __init__(self, subject: Reference[DataFrame], batch: Reference[DataFrame], steps: list[Step], *, batch_size: int = 1000):
-        super().__init__(subject, batch, steps, batch_size=batch_size)
-
 
     def gen_batches(self, subject: DataFrame) -> Iterable[DataFrame]:
             n = len(subject.index)
