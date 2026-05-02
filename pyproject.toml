@@ -16,7 +16,8 @@ dependencies = [
     "pydantic>=2.6,<3",
     "requests>=2.31,<3",
     "pydantic",
-    "pydantic-settings"
+    "pydantic-settings",
+    "tenacity"
 ]
 
 [project.optional-dependencies]
