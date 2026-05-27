@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from elasticsearch import Elasticsearch
+from dataclasses import dataclass
 
 class ElasticsearchClientArgs(BaseModel):
     """ mixin for settings that initialize an elasticsearch client """
@@ -23,6 +24,7 @@ class ElasticsearchIngestPipelineArgs(BaseModel):
     ingest_pipeline:str
 
 
-class HasElasticsearchClient(BaseModel):
+@dataclass
+class HasElasticsearchClient:
     """ mixin for clients with an elasticsearch instance """
     elasticsearch:Elasticsearch
