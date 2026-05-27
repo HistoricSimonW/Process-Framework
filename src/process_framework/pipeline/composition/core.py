@@ -5,6 +5,13 @@ from abc import ABC
 from dataclasses import dataclass, fields
 from argparse import BooleanOptionalAction
 
+def mask(value: str, chars:int=4) -> str:
+    if len(value) <= chars*2:
+        return "*" * len(value)
+
+    return f"{value[:chars]}***{value[-chars:]}"
+
+
 class CrudArgs(BaseModel):
     """ creations, updates, deletions, with CliArgs """
     

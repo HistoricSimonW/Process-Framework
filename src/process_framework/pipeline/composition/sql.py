@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from sqlalchemy import URL, Engine, create_engine
+from .core import mask
 
 class EngineQueryArgs(BaseModel):
     """ nested model for arguments passed into `URL.create(query={x})` """
@@ -28,3 +29,10 @@ class EngineArgs(BaseModel):
     def get_engine(self) -> Engine:
         url = self.get_url()
         return create_engine(url)
+    
+    
+    def __repr_args__(self):
+        return [
+            ("username", mask(self.username)),
+            ("password", mask(self.password)),
+        ]

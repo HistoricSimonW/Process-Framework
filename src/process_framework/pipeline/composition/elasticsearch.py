@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from elasticsearch import Elasticsearch
 from dataclasses import dataclass
+from .core import mask
 
 class ElasticsearchClientArgs(BaseModel):
     """ mixin for settings that initialize an elasticsearch client """
@@ -12,6 +13,12 @@ class ElasticsearchClientArgs(BaseModel):
                 include=set(ElasticsearchClientArgs.model_fields.keys()),
             )
         )
+    
+    def __repr_args__(self):
+        return [
+            ("cloud_id", mask(self.cloud_id)),
+            ("api_key", mask(self.api_key)),
+        ]
 
     
 class ElasticsearchIndexArgs(BaseModel):
