@@ -18,42 +18,39 @@ import logging
 import sys
 from logging.handlers import RotatingFileHandler
 from logging import Logger
-from process_framework.pipeline import PipelineBase
+from process_framework.pipeline import Pipeline
+from process_framework.pipeline.pipeline import PipelineBuilder
 from pathlib import Path
 from typing import Sequence
 from abc import ABC, abstractmethod
+from abc import ABC
 
-class CliBase[TPipeline:PipelineBase](ABC):
-    
-    def main(self, argsv:Sequence[str]|None=None) -> int:
-        # if argsv haven't been passed in, get them from sys
+class CliBase(ABC):
+
+    def main(self, argsv: Sequence[str] | None = None) -> int:
         if argsv is None:
             argsv = sys.argv[1:]
 
-        # parse args for cli
         parser = ArgumentParser()
         self.add_args(parser)
         args, _ = parser.parse_known_args(argsv)
 
-        # configure logging
-        logger = logging.getLogger()
-        self.configure_logging(args, logger)
+        self.configure_logging(args, logging.getLogger())
 
-        # init pipeline
         pipeline = self.initialize_pipeline(argsv)
         pipeline.log_steps()
         pipeline.do()
         return 0
-    
-        
-    def initialize_pipeline(self, argsv:Sequence[str]|None) -> TPipeline:
-        cls = self.get_pipeline_class()
-        return cls.from_environment(argsv)
-    
+
+
+    def initialize_pipeline(self, argsv: Sequence[str] | None) -> Pipeline:
+        builder = self.initialize_builder(argsv)
+        return builder.build_pipeline()
+
 
     @abstractmethod
-    def get_pipeline_class(self) -> type[TPipeline]:
-        """ get the type of the Pipeline to run """
+    def initialize_builder(self, argsv: Sequence[str] | None) -> PipelineBuilder:
+        """Initialize the builder for this CLI invocation."""
         ...
 
 

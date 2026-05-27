@@ -7,6 +7,7 @@ from argparse import BooleanOptionalAction
 
 class CrudArgs(BaseModel):
     """ creations, updates, deletions, with CliArgs """
+    
     creations:Annotated[bool, CliArg('--creations', '-c', action=BooleanOptionalAction)]
     updates:Annotated[bool, CliArg('--updates', '-u', action=BooleanOptionalAction)]
     deletions:Annotated[bool, CliArg('--deletions', '-d', action=BooleanOptionalAction)]
@@ -15,7 +16,15 @@ class CrudArgs(BaseModel):
 @dataclass
 class ContainerBase(ABC):
     """base class for containers requiring all fields to be assigned."""
+
     def preflight(self) -> None:
         for field in fields(self):
-            if getattr(self, field.name) is None:
-                raise ValueError(f"required field {field.name} is not assigned")
+            value = getattr(self, field.name)
+
+            if value is None:
+                raise ValueError(
+                    f"required field {field.name} is not assigned"
+                )
+
+            if isinstance(value, ContainerBase):
+                value.preflight()
