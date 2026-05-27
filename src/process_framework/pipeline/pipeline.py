@@ -34,9 +34,9 @@ class PipelineBuilder[
     settings:TSettings
     references:TReferences
     clients:TClients
-
-    @abstractmethod
+    
     @classmethod
+    @abstractmethod
     def from_environment(cls, 
                          t_settings:type[TSettings], 
                          t_references:type[TReferences], 
