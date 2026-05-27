@@ -7,8 +7,8 @@ class EngineQueryArgs(BaseModel):
     trust_server_certificate:str|None = Field(None,serialization_alias='TrustServerCertificate')
     
 
-class DatabaseArgs(BaseModel):
-    """ mixin for settings that describe a connection to a database """
+class EngineArgs(BaseModel):
+    """ mixin for settings that describe a database engine """
     host:str
     database:str
     username:str
@@ -19,7 +19,7 @@ class DatabaseArgs(BaseModel):
     def get_url(self) -> URL:
         return URL.create(
             **self.model_dump(
-                include=set(DatabaseArgs.model_fields.keys()),
+                include=set(EngineArgs.model_fields.keys()),
                 by_alias=True, 
                 exclude_none=True
             )

@@ -9,8 +9,8 @@ from typing import Self
 class ClientsBase[TSettings:SettingsBase](ContainerBase, ABC):
     """base class for client containers holding external service connections."""
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def initialize(cls, settings:TSettings) -> Self:
         ...
 
