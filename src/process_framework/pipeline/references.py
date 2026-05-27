@@ -7,9 +7,9 @@ from .composition.core import ContainerBase
 @dataclass
 class ReferenceGraphBase(ContainerBase, ABC):
     """base class for reference containers holding pipeline state."""
-
-    @abstractmethod
+    
     @classmethod
+    @abstractmethod
     def initialize(cls) -> Self:
         """ construct a wired-up instance of `cls` """
         ...
