@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Any
+from typing import Any, Self, Iterable
 from abc import ABC
 from pydantic import Field
 from .actions import IndexAction, UpdateAction
@@ -30,3 +30,14 @@ class DocumentBase(BaseModel, ABC):
             _id=_id,
             doc=dump
         )
+    
+
+    @classmethod
+    def from_record(cls, record) -> Self:
+        return cls.model_validate(dict(record))
+    
+
+    @classmethod
+    def gen_documents_from_records(cls, records:Iterable) -> Iterable[Self]:
+        for record in records:
+            yield cls.from_record(record)
