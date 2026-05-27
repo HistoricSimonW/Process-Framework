@@ -1,38 +1,36 @@
 from process_framework import Reference, Step
 from abc import abstractmethod
-from pandas import DataFrame
-from collections import deque
-from collections.abc import Iterable
-from dataclasses import dataclass, KW_ONLY
+# from collections import deque
+from typing import Iterable
+from dataclasses import dataclass, KW_ONLY, field
 import logging
 from .composition.core import HasInput
-
-@dataclass(slots=True)
-class _Retry[TBatch]:
-    i:int
-    batch:TBatch
-    try_:int = 0
+from ..composition.retries import RetryArgs
+from itertools import batched
+# @dataclass(slots=True)
+# class _Retry[TBatch]:
+#     i:int
+#     batch:TBatch
+#     try_:int = 0
 
 
 @dataclass
 class BatchProcessor[TIn, TBatch](Step, HasInput[TIn]):
     """ apply a list of steps to a batch """
-    batch:Reference[TBatch]
-    steps:list[Step]
-    batch_size:int
+    batch:Reference[TBatch] # the batch
+    steps:list[Step]        # the steps applied to the batch
+    batch_size:int          # the size of the batch
     _ : KW_ONLY
-    max_retries:int = 10
-
-
-    @abstractmethod
-    def gen_batches(self, subject:TIn) -> Iterable[TBatch]:
-        ...
+    retry:RetryArgs|None
     
 
-    def on_batch_error(self, retry: _Retry[TBatch], exc: Exception) -> None:
-        # default: just log; override in subclass for backoff, metrics, etc.
-        self._warn(f"batch {retry.i} failed (try={retry.try_}): {exc}")
 
+    def gen_batches(self, input_:TIn) -> Iterable[TBatch]:
+        if not isinstance(input_, Iterable):
+            raise ValueError()
+
+        return batched(input_, self.batch_size) 
+    
 
     def handle_batch(self, batch:TBatch) -> None:
         self.batch.set_value(batch)
@@ -51,32 +49,14 @@ class BatchProcessor[TIn, TBatch](Step, HasInput[TIn]):
         # generated an enumerated iterable of batches
         batches = enumerate(self.gen_batches(subject))
 
-        # prepare a collection of retries
-        to_retry:deque[_Retry[TBatch]] = deque()
-
         for i, batch in batches:
-            try:
-                self.handle_batch(batch)
-            except Exception as e:
-                retry = _Retry(i, batch)
-                self.on_batch_error(retry, e)
-                to_retry.append(retry)
+            call = lambda batch=batch: self.handle_batch(batch)
+            if self.retry:
+                call = self.retry.wrap(call)
+            # call.__setattr__('batch_index', i)
+            call.__name__ = f'batch {i}'
+            call()
 
-        # while there are _Retries handle them until their `try_` exceeds `self.max_retries`
-        while to_retry:
-            retry = to_retry.popleft()
-            try:
-                logging.info(f"retrying, {retry.i}, try={retry.try_ + 1}/{self.max_retries}")
-                self.handle_batch(retry.batch)
-            
-            except Exception as e:
-                if retry.try_ >= self.max_retries:
-                    logging.info(f'retries exhausted for batch {retry.i}')
-                    raise
-                
-                logging.info(f'{retry.i}, {e}')
-                retry.try_ += 1
-                to_retry.append(retry)
 
         logging.info('done!')
     
@@ -87,10 +67,32 @@ class BatchProcessor[TIn, TBatch](Step, HasInput[TIn]):
             step.preflight()
 
 
-@dataclass
-class BatchProcessDataFrame(BatchProcessor[DataFrame, DataFrame]):
 
-    def gen_batches(self, subject: DataFrame) -> Iterable[DataFrame]:
-            n = len(subject.index)
-            for start in range(0, n, self.batch_size):
-                yield subject.iloc[start : start + self.batch_size, :].copy()
+
+
+        # # prepare a collection of retries
+        # to_retry:deque[_Retry[TBatch]] = deque()
+
+
+        #     try:
+        #         self.handle_batch(batch)
+        #     except Exception as e:
+        #         retry = _Retry(i, batch)
+        #         self.on_batch_error(retry, e)
+        #         to_retry.append(retry)
+
+        # # while there are _Retries handle them until their `try_` exceeds `self.max_retries`
+        # while to_retry:
+        #     retry = to_retry.popleft()
+        #     try:
+        #         logging.info(f"retrying, {retry.i}, try={retry.try_ + 1}/{self.max_retries}")
+        #         self.handle_batch(retry.batch)
+            
+        #     except Exception as e:
+        #         if retry.try_ >= self.max_retries:
+        #             logging.info(f'retries exhausted for batch {retry.i}')
+        #             raise
+                
+        #         logging.info(f'{retry.i}, {e}')
+        #         retry.try_ += 1
+        #         to_retry.append(retry)

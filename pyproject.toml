@@ -21,8 +21,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-sql=["sqlalchemy", "pyodbc"]
+sql=["pandas", "sqlalchemy", "pyodbc"]
 geo=["geopandas"]
+elasticsearch=["elasticsearch"]
+pandas=["pandas"]
 
 [tool.setuptools]
 include-package-data = false
