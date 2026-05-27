@@ -1,16 +1,10 @@
 from pydantic import BaseModel
-from ..settings import CliArg
+from process_framework.pipeline.settings import CliArg
 from typing import Annotated
 from abc import ABC
 from dataclasses import dataclass, fields
 from argparse import BooleanOptionalAction
-
-def mask(value: str, chars:int=4) -> str:
-    if len(value) <= chars*2:
-        return "*" * len(value)
-
-    return f"{value[:chars]}***{value[-chars:]}"
-
+from abc import ABC
 
 class CrudArgs(BaseModel):
     """ creations, updates, deletions, with CliArgs """

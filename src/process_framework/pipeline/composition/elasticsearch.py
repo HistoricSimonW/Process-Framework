@@ -1,12 +1,13 @@
 from pydantic import BaseModel
 from elasticsearch import Elasticsearch
 from dataclasses import dataclass
-from .core import mask
+from .masking import HasMaskedFields, Masked
+from typing import Annotated
 
-class ElasticsearchClientArgs(BaseModel):
+class ElasticsearchClientArgs(HasMaskedFields, BaseModel):
     """ mixin for settings that initialize an elasticsearch client """
-    cloud_id:str
-    api_key:str
+    cloud_id:Annotated[str, Masked(4)]
+    api_key:Annotated[str, Masked(4)]
 
     def get_client(self) -> Elasticsearch:
         return Elasticsearch(**self.model_dump(
@@ -14,12 +15,6 @@ class ElasticsearchClientArgs(BaseModel):
             )
         )
     
-    def __repr_args__(self):
-        return [
-            ("cloud_id", mask(self.cloud_id)),
-            ("api_key", mask(self.api_key)),
-        ]
-
     
 class ElasticsearchIndexArgs(BaseModel):
     """ mixin for settings that have an elasticsearch index """
