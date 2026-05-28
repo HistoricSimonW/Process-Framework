@@ -44,7 +44,7 @@ class IModifyOrmQuery(ABC):
         ...
 
     @abstractmethod
-    def modify_query(self, metadata:MetaData, query:Select) -> Select:
+    def modify_query(self, metadata:MetaData|None, query:Select) -> Select:
         ...
 
 
@@ -52,7 +52,7 @@ class IModifyOrmQuery(ABC):
 class ILimitQuery(IModifyOrmQuery):
     count:int|None
 
-    def modify_query(self, metadata:MetaData, query:Select):
+    def modify_query(self, metadata:MetaData|None, query:Select):
         if self.count is None:
             return query
         
@@ -106,7 +106,7 @@ class IAddInClause(IModifyOrmQuery):
         raise ValueError()
     
 
-    def modify_metadata(self, metadata: MetaData) -> None:
+    def modify_metadata(self, metadata:MetaData) -> None:
         _ = Table(
             TEMP_TABLE_NAME, metadata,
             Column(TEMP_TABLE_COLUMN, self.values_type)    # id values in the temp table should be of the same type as the 'in_column'
@@ -114,7 +114,8 @@ class IAddInClause(IModifyOrmQuery):
         logging.info(f'{self} has created a temp table for _ids {TEMP_TABLE_NAME}')
     
 
-    def modify_query(self, metadata:MetaData, query:Select):
+    def modify_query(self, metadata:MetaData|None, query:Select):
+        assert metadata is not None
         in_table = metadata.tables[self.in_table]
         temp_table = metadata.tables[TEMP_TABLE_NAME]
 
@@ -131,9 +132,14 @@ class IGetQuery(ABC):
         ...
 
     def modify_query(self, step, query:Select) -> Select:
+        try:
+            metadata:MetaData|None = self.__getattribute__('metadata')
+        except:
+            metadata = None
+            
         if self.modifiers is not None:
             for modifier in self.modifiers:
-                query = modifier.modify_query(step, query)
+                query = modifier.modify_query(metadata, query)
         return query
     
     def get_modified_query(self, step) -> Select:
