@@ -1,9 +1,9 @@
 from .core import StepMixin
-from sqlalchemy import Engine, Select, text, select
+from sqlalchemy import Engine, Select, text, select, MetaData
 from dataclasses import dataclass, KW_ONLY
 from abc import ABC, abstractmethod
 from ...references.composition.core import IGettable
-from typing import Iterable, Mapping, Callable
+from typing import Iterable, Mapping, Callable, Any
 from pandas import DataFrame
 import pandas as pd
 
@@ -35,8 +35,11 @@ class IGetQueryResult(HasSqlEngine, ABC):
 
 @dataclass
 class IModifyOrmQuery(ABC):
+    def modify_metadata(self, step, metadata:MetaData) -> None:
+        ...
+
     @abstractmethod
-    def modify_query(self, query:Select) -> Select:
+    def modify_query(self, step, query:Select) -> Select:
         ...
 
 
@@ -44,34 +47,71 @@ class IModifyOrmQuery(ABC):
 class ILimitQuery(IModifyOrmQuery):
     count:int|None
 
-    def modify_query(self, query):
+    def modify_query(self, step, query):
         if self.count is None:
             return query
         
         return query.limit(self.count)
-    
+
+
+from sqlalchemy import Select, MetaData, Engine, TextClause, ColumnElement, Table, Column, Connection, insert
+from sqlalchemy.schema import CreateTable, DropTable
+from itertools import batched
+from contextlib import AbstractContextManager
+from types import TracebackType
+
+@dataclass
+class IdsTempTableContext(AbstractContextManager):
+    """ context manager for temp-table using queries
+        this ensures the temp table is cleaned up, even if the code within this context throws an error
+        of course, temp tables are dropped when the connection closes; this is intended to make testing easier"""
+    conn:Connection
+    table:Table
+    _ids:list
+
+    def __enter__(self) -> Any:
+        self.conn.execute(CreateTable(self.table))
+        for batch in batched(self._ids, 1000):
+            self.conn.execute(insert(self.table).values([(t,) for t in batch]))
+
+    def __exit__(self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None) -> None:
+        self.conn.execute(DropTable(self.table))
+
+
+TEMP_TABLE_NAME = '#TEMP_IDS'
+TEMP_TABLE_ID = '_id'
+
 
 @dataclass
 class IAddInClause(IModifyOrmQuery):
-    in_values:IGettable[Iterable]|None
-    in_column:str|None
-
-    def get_in_values(self) -> list|None:
+    in_values:IGettable[Iterable]
+    in_column_getter:Callable[[MetaData], Column]
+    in_values_type:Any
+    
+    def get_in_values(self) -> list:
         ref = self.in_values
         if ref is None:
-            return None
+            return []
         
         if not ref.has_value():
-            return None
+            return []
         
         values = list(ref.get_value())
         return values
     
-    def modify_query(self, query):
-        values = self.get_in_values()
-        if values is not None and self.in_column is not None:
-            query = query.where(text(f'{self.in_column} IN ({','.join(values)})'))
-        return query
+
+    def modify_metadata(self, step, metadata: MetaData) -> None:
+        step.TempTable = Table(
+            TEMP_TABLE_NAME, metadata,
+            Column(TEMP_TABLE_ID, self.in_values_type)    # id values in the temp table should be of the same type as the 'in_column'
+        )
+    
+
+    def modify_query(self, step, query):
+        in_column = self.in_column_getter(step.metadata)
+        return query.join(
+            step._temp_table, in_column == step._temp_table.c[TEMP_TABLE_ID]
+        )
     
     
 @dataclass
@@ -81,15 +121,15 @@ class IGetQuery(ABC):
     def get_query(self) -> Select:
         ...
 
-    def modify_query(self, query:Select) -> Select:
+    def modify_query(self, step, query:Select) -> Select:
         if self.modifiers is not None:
             for modifier in self.modifiers:
-                query = modifier.modify_query(query)
+                query = modifier.modify_query(step, query)
         return query
     
-    def get_modified_query(self) -> Select:
+    def get_modified_query(self, step) -> Select:
         query = self.get_query()
-        return self.modify_query(query)
+        return self.modify_query(step, query)
     
 
 @dataclass

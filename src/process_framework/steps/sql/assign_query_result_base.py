@@ -16,7 +16,8 @@ class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](IGetQueryResult, IGetQ
     column_mapper:Callable[[str], str]|Mapping[str,str]|None=None
     column_as_series:str|None=None
     drop_index_column:bool=True
-    
+
+
     def on_transform_result(self, result:DataFrame) -> T:
         """ handle the result DataFrame into the required output type """
         output_type = self.output_.get_type()
@@ -52,6 +53,6 @@ class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](IGetQueryResult, IGetQ
 
     
     def generate_value(self) -> T | None:
-        query = self.get_modified_query()
+        query = self.get_modified_query(self)
         result = self.get_query_result(query)
         return self.transform_result(result)
