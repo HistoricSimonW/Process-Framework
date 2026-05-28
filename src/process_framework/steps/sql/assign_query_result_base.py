@@ -12,13 +12,13 @@ from typing import cast
 @dataclass
 class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](IGetQueryResult, IGetQuery, AssigningStep[T], ABC):
     """ base class for Steps that assign the result of Sql queries to `assign_to`"""
-    column_mapper:Callable[[str], str]|dict[str,str]|None=None
-    column_as_index:str|None=None
+    column_as_index:str|list[str]|None=None
+    column_mapper:Callable[[str], str]|Mapping[str,str]|None=None
     column_as_series:str|None=None
     drop_index_column:bool=True
     
     def on_transform_result(self, result:DataFrame) -> T:
-
+        """ handle the result DataFrame into the required output type """
         output_type = self.output_.get_type()
 
         if output_type == DataFrame:
@@ -41,17 +41,13 @@ class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](IGetQueryResult, IGetQ
 
     
     def transform_result(self, result:DataFrame) -> T:
+        """ apply renames and indexing, then return the typed result via `on_transform_result` """
         if self.column_mapper is not None:
-            result.columns = result.columns.map(self.column_mapper)
-
-        if self.column_as_index is not None:
-            if self.column_as_index in result.index.names:
-                pass
-            elif self.column_as_index in result.columns:
-                result = result.set_index(self.column_as_index, drop=self.drop_index_column)
-            else:
-                self._warn(f"index `{self.column_as_index}` was not a name in `result`'s columns or index; has it been changed by `column_mapper` {self.column_mapper}?")
+            result = result.rename(self.column_mapper, axis=1)
         
+        if self.column_as_index is not None:
+            result = result.set_index(self.column_as_index, drop=self.drop_index_column)
+
         return self.on_transform_result(result)
 
     

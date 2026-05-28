@@ -1,37 +1,36 @@
 from .core import StepMixin
 from sqlalchemy import Engine, Select, text, select
-from dataclasses import dataclass
+from dataclasses import dataclass, KW_ONLY
 from abc import ABC, abstractmethod
 from ...references.composition.core import IGettable
-from typing import Iterable, Mapping
+from typing import Iterable, Mapping, Callable
 from pandas import DataFrame
 import pandas as pd
 
 @dataclass
 class HasSqlEngine(StepMixin):
-    """mixin providing an elasticsearch client and connectivity check."""
+    """mixin providing SQL Engine and connectivity check."""
     engine:Engine
 
     def preflight(self) -> None:
-        self._error("implement HasSqlConnection.preflight (test connection)")
+        self.engine.connect()
         super().preflight()
 
 
 @dataclass
 class IGetQueryResult(HasSqlEngine, ABC):
-    index_col:str|list[str]|None
-    dtype:dict|None
-    renames:Mapping[str, str]|None
+    """mixin wrapping `pd.read_sql` and injecting a kwargs."""
+    _ = KW_ONLY
+    read_sql_kwargs:dict|None=None
 
     def get_query_result(self, query:Select) -> DataFrame:
-        df = pd.read_sql(
+        kwargs = self.read_sql_kwargs or dict()
+
+        return pd.read_sql(
             sql=query,
             con=self.engine,
-            index_col=self.index_col,
-            dtype=self.dtype
+            **kwargs
         )
-        df = df.rename(self.renames, axis=1)
-        return df
 
 
 @dataclass
