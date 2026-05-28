@@ -1,4 +1,4 @@
-from ..reference_ import Reference
+from ..reference import Reference
 from pandas import Series, DataFrame
 from typing import Iterable
 
@@ -11,17 +11,17 @@ class IndexReference(Reference[Series]):
         self.level=level
     
 
-    def is_instance_of(self, class_or_tuple) -> bool:
-        if not self.has_value():
-            return False
+    # def is_instance_of(self, class_or_tuple) -> bool:
+    #     if not self.has_value():
+    #         return False
         
-        if isinstance(class_or_tuple, type):
-            return class_or_tuple == Series
+    #     if isinstance(class_or_tuple, type):
+    #         return class_or_tuple == Series
         
-        if isinstance(class_or_tuple, Iterable):
-            return Series in class_or_tuple
+    #     if isinstance(class_or_tuple, Iterable):
+    #         return Series in class_or_tuple
         
-        return False
+    #     return False
 
 
     def has_value(self) -> bool:
