@@ -1,54 +1,42 @@
-from ..reference_ import Reference
+from ..reference import Reference
 from pandas import Series, DataFrame
-from typing import Iterable
+from typing import Iterable, cast
 
 
-class ColumnReference(Reference[Series]):
+class ColumnReference[T:Series](Reference[T]):
     """ a reference to a column in the value of a Reference[DataFrame] """
-    def __init__(self, df:Reference[DataFrame], column:str, column_as_index:"str|ColumnReference|None"=None):
-        self._type = Series
+    def __init__(self, df:Reference[DataFrame], column:str, column_as_index:"str|ColumnReference|None"=None, type:type[T]=Series):
+        super().__init__(type, None)
         self.df = df
         self.column = column
         self.column_as_index = (
             column_as_index.column if isinstance(column_as_index, ColumnReference) 
             else column_as_index
         )
-
-
-    def is_instance_of(self, class_or_tuple) -> bool:
-        if not self.has_value():
-            return False
-        
-        if isinstance(class_or_tuple, type):
-            return class_or_tuple == Series
-        
-        if isinstance(class_or_tuple, Iterable):
-            return Series in class_or_tuple
-        
-        return False
     
     
     def has_value(self) -> bool:
         return self.df.has_value() and (self.column in self.df.get_value().columns)
     
-
-    def set(self, value: Series | None):
+    def set_value(self, value: T | None) -> None:
         if value is None:
             self.value = None
             return
         
-        assert isinstance(value, Series), f'expected value of type `Series`, got {Series}'
+        assert isinstance(value, self._type), f'expected value of type `Series`, got {Series}'
         
-        df = self.df.value
-        assert isinstance(df, DataFrame), "referenced dataframe has not been assigned; we can't assign a value to a column in it"
+        try:
+            df = self.df.get_value()
+        except Exception as e:
+            raise ValueError("referenced dataframe has not been assigned; we can't assign a value to a column in it") from e
         
         # we can assign based on index (default) or use a `column_as_index` and map to that instead
         if isinstance(self.column_as_index, str):
             df[self.column] = df[self.column_as_index].map(value)
         else:
-            df[self.column] = df.index.map(value)
+            df[self.column] = df.index.map(value) # type:ignore
+    
 
-
-    def get_value(self) -> Series:
-        """ return the column `self.column` of `self.df`; throws an error if `self.df` is not set, or `self.column` is not in the `DataFrame` """
-        return self.df.get_value()[self.column]
+    def get_value(self) -> T:
+        v = self.df.get_value()[self.column]
+        return cast(T, v)
