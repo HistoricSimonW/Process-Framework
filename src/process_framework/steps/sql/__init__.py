@@ -1,2 +1,3 @@
-from .assign_query_result_orm import GetOrmQueryResult
-from .assign_query_result_text import GetTextQueryResult
+# from .assign_query_result_orm import GetOrmQueryResult
+# from .assign_query_result_text import GetTextQueryResult
+from .assign_query_result_base import GetSqlQueryResultBase
