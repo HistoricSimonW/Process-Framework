@@ -1,4 +1,4 @@
-from ..mixins.core import StepMixin
+from .core import StepMixin
 from sqlalchemy import Engine, Select, text, select
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
@@ -8,7 +8,7 @@ from pandas import DataFrame
 import pandas as pd
 
 @dataclass
-class HasSqlConnection(StepMixin):
+class HasSqlEngine(StepMixin):
     """mixin providing an elasticsearch client and connectivity check."""
     engine:Engine
 
@@ -18,7 +18,7 @@ class HasSqlConnection(StepMixin):
 
 
 @dataclass
-class IGetQueryResult(HasSqlConnection, ABC):
+class IGetQueryResult(HasSqlEngine, ABC):
     index_col:str|list[str]|None
     dtype:dict|None
     renames:Mapping[str, str]|None
@@ -74,7 +74,7 @@ class IAddInClause(IModifyOrmQuery):
             query = query.where(text(f'{self.in_column} IN ({','.join(values)})'))
         return query
     
-from dataclasses import field
+    
 @dataclass
 class IGetQuery(ABC):
     modifiers:list[IModifyOrmQuery]
@@ -105,34 +105,34 @@ class IGetTextQuery(IGetQuery):
         return select(text(self.query))
     
 
-class GetTextQueryResult(IGetTextQuery, IGetQueryResult):
-    ...
+# class GetTextQueryResult(IGetTextQuery, IGetQueryResult):
+#     ...
 
-from pandas import DataFrame, Series
-from ..step import AssigningStep
-from typing import cast
+# from pandas import DataFrame, Series
+# from ..step import AssigningStep
+# from typing import cast
 
-@dataclass
-class AssignSqlQueryResult[T:(DataFrame, Series)](IGetQuery, IGetQueryResult, AssigningStep[T], ABC):
+# @dataclass
+# class AssignSqlQueryResult[T:(DataFrame, Series)](IGetQuery, IGetQueryResult, AssigningStep[T], ABC):
 
-    def on_transform_result(self, result:T) -> T:
-        return result
+#     def on_transform_result(self, result:T) -> T:
+#         return result
 
-    def transform_result(self, result:DataFrame) -> T:
-        if self.output_.can_set(result):
-            typed = cast(T, result)
-            return self.on_transform_result(typed)
+#     def transform_result(self, result:DataFrame) -> T:
+#         if self.output_.can_set(result):
+#             typed = cast(T, result)
+#             return self.on_transform_result(typed)
         
-        raise TypeError(
-            f"can't assign {type(result).__name__} to {self.output_.get_type().__name__}"
-        )
+#         raise TypeError(
+#             f"can't assign {type(result).__name__} to {self.output_.get_type().__name__}"
+#         )
 
-    def generate_value(self) -> T | None:
-        query = self.get_modified_query()
-        result = self.get_query_result(query)
-        return self.transform_result(result)
+#     def generate_value(self) -> T | None:
+#         query = self.get_modified_query()
+#         result = self.get_query_result(query)
+#         return self.transform_result(result)
     
 
-class AssignTextQueryResult(AssignSqlQueryResult[DataFrame], IGetTextQuery):
-    ...
+# class AssignTextQueryResult(AssignSqlQueryResult[DataFrame], IGetTextQuery):
+#     ...
         
