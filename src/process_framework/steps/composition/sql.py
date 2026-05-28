@@ -1,5 +1,5 @@
 from .core import StepMixin
-from sqlalchemy import Engine, Select, text, select, MetaData
+from sqlalchemy import Engine, Select, text, select, MetaData, Connection
 from dataclasses import dataclass, KW_ONLY
 from abc import ABC, abstractmethod
 from ...references.composition.core import IGettable
@@ -23,23 +23,28 @@ class IGetQueryResult(HasSqlEngine, ABC):
     _ = KW_ONLY
     read_sql_kwargs:dict|None=None
 
-    def get_query_result(self, query:Select) -> DataFrame:
+    def get_query_result(self, query:Select, connection:Connection|None=None) -> DataFrame:
+        
+        if connection is None:
+            with self.engine.connect() as con:
+                return self.get_query_result(query, con)
+            
         kwargs = self.read_sql_kwargs or dict()
 
         return pd.read_sql(
             sql=query,
-            con=self.engine,
+            con=connection,
             **kwargs
         )
 
 
 @dataclass
 class IModifyOrmQuery(ABC):
-    def modify_metadata(self, step, metadata:MetaData) -> None:
+    def modify_metadata(self, metadata:MetaData) -> None:
         ...
 
     @abstractmethod
-    def modify_query(self, step, query:Select) -> Select:
+    def modify_query(self, metadata:MetaData, query:Select) -> Select:
         ...
 
 
@@ -47,7 +52,7 @@ class IModifyOrmQuery(ABC):
 class ILimitQuery(IModifyOrmQuery):
     count:int|None
 
-    def modify_query(self, step, query):
+    def modify_query(self, metadata:MetaData, query:Select):
         if self.count is None:
             return query
         
@@ -79,38 +84,42 @@ class IdsTempTableContext(AbstractContextManager):
 
 
 TEMP_TABLE_NAME = '#TEMP_IDS'
-TEMP_TABLE_ID = '_id'
-
+TEMP_TABLE_COLUMN = '_id'
+from typing import ClassVar, Literal
+import logging
 
 @dataclass
 class IAddInClause(IModifyOrmQuery):
-    in_values:IGettable[Iterable]
-    in_column_getter:Callable[[MetaData], Column]
-    in_values_type:Any
+    values:IGettable[Iterable]|list
+    in_table:str
+    in_column:str
+    values_type:Any
     
     def get_in_values(self) -> list:
-        ref = self.in_values
-        if ref is None:
-            return []
+
+        if isinstance(self.values, list):
+            return self.values
         
-        if not ref.has_value():
-            return []
-        
-        values = list(ref.get_value())
-        return values
+        if isinstance(self.values, IGettable):
+            return list(self.values.get_value())
+
+        raise ValueError()
     
 
-    def modify_metadata(self, step, metadata: MetaData) -> None:
-        step.TempTable = Table(
+    def modify_metadata(self, metadata: MetaData) -> None:
+        _ = Table(
             TEMP_TABLE_NAME, metadata,
-            Column(TEMP_TABLE_ID, self.in_values_type)    # id values in the temp table should be of the same type as the 'in_column'
+            Column(TEMP_TABLE_COLUMN, self.values_type)    # id values in the temp table should be of the same type as the 'in_column'
         )
+        logging.info(f'{self} has created a temp table for _ids {TEMP_TABLE_NAME}')
     
 
-    def modify_query(self, step, query):
-        in_column = self.in_column_getter(step.metadata)
+    def modify_query(self, metadata:MetaData, query:Select):
+        in_table = metadata.tables[self.in_table]
+        temp_table = metadata.tables[TEMP_TABLE_NAME]
+
         return query.join(
-            step._temp_table, in_column == step._temp_table.c[TEMP_TABLE_ID]
+            temp_table, in_table.c[self.in_column] == temp_table.c[TEMP_TABLE_COLUMN]
         )
     
     

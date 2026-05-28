@@ -9,11 +9,9 @@ from itertools import batched
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
 import logging
-from process_framework.steps.composition.sql import IAddInClause
+from process_framework.steps.composition.sql import IAddInClause, TEMP_TABLE_NAME
 
 MAX_IN_VALUES_LEN = 10_000
-TEMP_TABLE_NAME = '#TEMP_IDS'
-TEMP_TABLE_ID = '_id'
 
 @dataclass
 class GetOrmQueryResult[T:(DataFrame, Series, Index)](GetSqlQueryResultBase[T], ABC):
@@ -22,6 +20,7 @@ class GetOrmQueryResult[T:(DataFrame, Series, Index)](GetSqlQueryResultBase[T], 
     def preflight(self) -> None:
         self.metadata = self.get_metadata()
         return super().preflight()
+
 
     def get_metadata(self) -> MetaData:
         """ initialize an instance of `MetaData`, pass it to `populate_metadata`; set the `in_column` from the metadata """
@@ -32,19 +31,9 @@ class GetOrmQueryResult[T:(DataFrame, Series, Index)](GetSqlQueryResultBase[T], 
 
         # if we have _ids, we need a 'temp table' definition in our metadata
         for mod in self.modifiers:
-            if isinstance(mod, IAddInClause):
-                self._temp_table = self._get_temp_table_metadata(mod, metadata)
-                logging.info(f'{self} has created a temp table for _ids {self._temp_table}')
+            mod.modify_metadata(metadata)
 
         return metadata
-
-
-    def _get_temp_table_metadata(self, in_clause:IAddInClause, metadata):
-        # because this is claled within `get_metadata`, `in_column` must be set; we rely on `in_column` to define the type of _id
-        return Table(
-            TEMP_TABLE_NAME, metadata,
-            Column(TEMP_TABLE_ID, in_clause.in_values_type)    # id values in the temp table should be of the same type as the 'in_column'
-        )
 
 
     @abstractmethod
@@ -54,19 +43,19 @@ class GetOrmQueryResult[T:(DataFrame, Series, Index)](GetSqlQueryResultBase[T], 
         ...
 
 
-    def get_query_result(self, query: Select) -> DataFrame:
+    def get_query_result(self, query: Select, connection:Connection|None=None) -> DataFrame:
         # if we have _ids, execute the query in a temp table context managed by a context manager
-        
-        _ids = next((m for m in self.modifiers if isinstance(m, IAddInClause)), None)
+        md = self.metadata
+        if TEMP_TABLE_NAME in md.tables:
+            
+            temp_table = md.tables[TEMP_TABLE_NAME]
+            _ids = next(t for t in self.modifiers if isinstance(t, IAddInClause))
 
-        if _ids is not None:
-            temp_table = self._temp_table
-
-            with IdsTempTableContext(self.engine.connect(), temp_table, _ids.get_in_values()):
-                return super().get_query_result(query)
+            with self.engine.connect() as conn, IdsTempTableContext(conn, temp_table, _ids.get_in_values()):
+                return super().get_query_result(query, conn)
 
         # if we aren't handling _ids, we don't need any special logic
-        return super().get_query_result(query)
+        return super().get_query_result(query, connection)
 
 
 @dataclass
