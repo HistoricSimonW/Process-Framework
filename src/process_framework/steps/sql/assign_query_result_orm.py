@@ -1,11 +1,9 @@
 from types import TracebackType
-from typing import Any, Mapping, Callable
-from ...references.reference import Reference
-from ...references.dataframe.reference_column import ColumnReference
+from typing import Any
 from .assign_query_result_base import GetSqlQueryResultBase
 from pandas import DataFrame, Series, Index
 from abc import ABC, abstractmethod
-from sqlalchemy import Select, MetaData, Engine, TextClause, ColumnElement, Table, Column, Connection, insert
+from sqlalchemy import Select, MetaData, Table, Column, Connection, insert
 from sqlalchemy.schema import CreateTable, DropTable
 from itertools import batched
 from contextlib import AbstractContextManager
