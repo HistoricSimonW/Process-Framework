@@ -1,5 +1,5 @@
 from process_framework import Step, Reference
-from .document import Document
+from .document import DocumentBaseModel
 from pandas import Series
 from elasticsearch.client import Elasticsearch
 from elasticsearch.helpers import bulk
@@ -40,7 +40,7 @@ class IndexDocuments(Step):
         
         # generate actions
         series:Series = self.subject.get_value() # type: ignore
-        actions = Document.gen_bulk_index_actions(
+        actions = DocumentBaseModel.gen_bulk_index_actions(
             index=self.index,
             documents=series.values
         )

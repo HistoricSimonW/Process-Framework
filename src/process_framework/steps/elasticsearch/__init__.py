@@ -1,5 +1,5 @@
-from .document import Document
-from .documents_from_dataframe import DataFrameToDocuments
+from .document import DocumentBaseModel
+from ..pydantic.dataframe_to_models import DataFrameToModels
 from .index_documents import IndexDocuments
 from .assign_scan_result import ScanToDataFrame
 from .delete_by_id import DeleteById

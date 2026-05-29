@@ -1,18 +1,16 @@
 from ...references import Reference
 from ..step import TransformingStep
-from .document import Document
+from pydantic import BaseModel
 from pandas import DataFrame, Series
 from typing import Any, Type
+from dataclasses import dataclass
 
+@dataclass
+class DataFrameToModels[T:BaseModel](TransformingStep[DataFrame, Series]):
+    document_type:Type[T]
 
-class DataFrameToDocuments[T:Document](TransformingStep[DataFrame, Series]):
-    def __init__(self, subject: Reference[DataFrame], assign_to: Reference[Series], document_type:type):
-        super().__init__(subject, assign_to)
-        self.document_type:Type[T] = document_type
-
-
-    def transform(self, subject: DataFrame) -> Series | None:
-        df = subject.copy()
+    def transform_value(self, input_: DataFrame) -> Series[Any]:
+        df = input_.copy()
         
         # if the df has a named index, get its levels as columns
         if all(df.index.names):

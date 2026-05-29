@@ -10,7 +10,7 @@ but pydantic treats underscored fields as private and doesn't serialize them
 we can work around this by modelling the fields as un-underscored, but serializing them by alias
 """
 
-class Document(BaseModel, ABC):
+class DocumentBaseModel(BaseModel, ABC):
     """ Documents must implement the `_id` abstract, computed property """
     model_config=ConfigDict(serialize_by_alias=True)
 
@@ -50,7 +50,7 @@ class Document(BaseModel, ABC):
     
     
     @staticmethod
-    def gen_bulk_index_actions(index:str, documents: Iterable['Document']) -> Iterable[dict]:
+    def gen_bulk_index_actions(index:str, documents: Iterable['DocumentBaseModel']) -> Iterable[dict]:
         """ gennerate an Iterable of bulk index actions for an iterable of `Document`s """
         for doc in documents:
             yield doc.get_bulk_index_action(index)
