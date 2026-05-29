@@ -3,7 +3,7 @@ from sqlalchemy import Engine, Select, text, select, MetaData, Connection
 from dataclasses import dataclass, KW_ONLY
 from abc import ABC, abstractmethod
 from ...references.composition.core import IGettable
-from typing import Iterable, Mapping, Callable, Any
+from typing import Iterable, Any
 from pandas import DataFrame
 import pandas as pd
 

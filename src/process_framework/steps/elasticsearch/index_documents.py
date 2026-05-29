@@ -1,5 +1,4 @@
-from ...references.reference_ import Reference
-from ..step_ import Step
+from process_framework import Step, Reference
 from .document import Document
 from pandas import Series
 from elasticsearch.client import Elasticsearch
@@ -57,7 +56,7 @@ class IndexDocuments(Step):
         
         # I don't do anything with the result (yet)
         if self.assign_result is not None:
-            self.assign_result.set(result)
+            self.assign_result.set_value(result)
             
         info(f'{result}')
 

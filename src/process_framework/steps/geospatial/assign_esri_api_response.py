@@ -1,5 +1,5 @@
-from process_framework.references.reference_ import Reference
-from ..transforming_step import TransformingStep
+from process_framework.references import Reference
+from ..step import TransformingStep
 from abc import ABC, abstractmethod
 from requests import Session, Response
 from requests.adapters import HTTPAdapter, Retry

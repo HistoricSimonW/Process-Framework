@@ -1,5 +1,4 @@
-from ..assigning_step import AssigningStep
-from ...references.reference_ import Reference
+from process_framework import Reference, AssigningStep
 from typing import Iterable, Any
 from pandas import Series
 

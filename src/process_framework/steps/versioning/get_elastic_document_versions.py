@@ -1,10 +1,10 @@
-from process_framework.references.reference_ import Reference
-from process_framework.steps import AssigningStep
+from process_framework import Reference, AssigningStep
 from pandas import Series, Index, DataFrame, MultiIndex
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import scan
 from typing import Iterable, Any
 import logging
+from process_framework.references.composition.core import IGettable
 
 class GetElasticDocumentVersions(AssigningStep[Index]):
     """ scan an elasticsearch index, producing a `MultiIndex` of `fields`, which can be compared with another `MultiIndex` to detect changes """
@@ -54,9 +54,9 @@ class GetElasticDocumentVersions(AssigningStep[Index]):
     
 
     def generate(self) -> Index:
-        if self.assign_to.has_value() and not self.overwrite:
+        if self.output_.has_value() and isinstance(self.output_, IGettable) and self.overwrite:
             logging.info(f'`assign_to` has value and `{self}` has `overwrite` flag set to False, returning current value')
-            return self.assign_to.get_value()
+            return self.output_.get_value()
         
         source = self.get_source()
 

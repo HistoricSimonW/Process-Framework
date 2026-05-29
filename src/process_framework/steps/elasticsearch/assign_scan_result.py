@@ -1,5 +1,4 @@
-from ...references.reference_ import Reference
-from ..assigning_step import AssigningStep
+from process_framework import AssigningStep, Reference
 from pandas import DataFrame, Series
 from elasticsearch.client import Elasticsearch
 from elasticsearch.helpers import scan
@@ -77,14 +76,14 @@ class ScanToDataFrame[T:(Series, DataFrame)](AssigningStep[T]):
         assert isinstance(result, DataFrame), "expected result to be a DataFrame"
 
         # if we're assigning a DataFrame, return the result
-        if self.assign_to._type is DataFrame:
+        if self.output_.get_type() is DataFrame:
             return cast(T, result)
 
         # we need a bit more logic to handle Series
         
         # if we're assigning to something other than a Series, we've done something wrong
-        if self.assign_to._type is not Series:
-            raise TypeError(f"`assign_to._type` should be in (Series, DataFrame), got `{self.assign_to._type}`")
+        if self.output_.get_type() is not Series:
+            raise TypeError(f"`assign_to._type` should be in (Series, DataFrame), got `{self.output_.get_type()}`")
         
         # if the result is empty, early escape
         if result.empty:

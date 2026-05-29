@@ -1,5 +1,5 @@
-from ..assigning_step import AssigningStep
-from ...references.reference_ import Reference
+from ..step import AssigningStep
+from ...references import Reference
 from pandas import DataFrame, Series
 from typing import Iterable, Any
 from requests import Session
@@ -63,14 +63,14 @@ class GetSolrQueryResult[T](AssigningStep[T]):
             df = df[self.fields]
         
         if 'path' in df.columns:
-            df.path = df.path.str[0]
+            df['path'] = df.path.str[0]
 
         df.columns = df.columns.map(underscore)
 
-        if len(df.columns) == 1 and self.assign_to._type == Series:
+        if len(df.columns) == 1 and self.output_.get_type() == Series:
             return df[df.columns[0]] # type: ignore
         
-        if self.assign_to._type == DataFrame:
+        if self.output_.get_type() == DataFrame:
             return df # type: ignore
         
         raise ValueError("unhandled state")

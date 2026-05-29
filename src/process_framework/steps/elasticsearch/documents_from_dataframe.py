@@ -1,5 +1,5 @@
-from ...references.reference_ import Reference
-from ..transforming_step import TransformingStep
+from ...references import Reference
+from ..step import TransformingStep
 from .document import Document
 from pandas import DataFrame, Series
 from typing import Any, Type
