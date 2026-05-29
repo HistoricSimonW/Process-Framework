@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from sqlalchemy import URL, Engine, create_engine
-from .masking import HasMaskedFields, Masked
+from process_framework.pipeline.composition.masking import HasMaskedFields, Masked
 from typing import Annotated
 
 class EngineQueryArgs(BaseModel):
@@ -13,8 +13,8 @@ class EngineArgs(HasMaskedFields, BaseModel):
     """ mixin for settings that describe a database engine """
     host:str
     database:str
-    username:Annotated[str, Masked(2)]
-    password:Annotated[str, Masked(2)]
+    username:Annotated[str, Masked(2)]|None=None
+    password:Annotated[str, Masked(2)]|None=None
     drivername:str
     query:EngineQueryArgs
 
@@ -31,3 +31,11 @@ class EngineArgs(HasMaskedFields, BaseModel):
     def get_engine(self) -> Engine:
         url = self.get_url()
         return create_engine(url)
+    
+if __name__ == '__main__':
+    EngineArgs(
+        host='host',
+        database='database',
+        drivername='drivername',
+        query=EngineQueryArgs(driver=None, trust_server_certificate=None)
+    )
