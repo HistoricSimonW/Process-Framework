@@ -1,14 +1,33 @@
-from .core import StepMixin
-from sqlalchemy import Engine, Select, text, select, MetaData, Connection
-from dataclasses import dataclass, KW_ONLY
 from abc import ABC, abstractmethod
-from ...references.composition.core import IGettable
-from typing import Iterable, Any
-from pandas import DataFrame
-import pandas as pd
+from contextlib import AbstractContextManager
+from dataclasses import KW_ONLY, dataclass
+from itertools import batched
+import logging
+from types import TracebackType
+from typing import Any, Iterable
 
-@dataclass
-class HasSqlEngine(StepMixin):
+import pandas as pd
+from pandas import DataFrame
+
+from sqlalchemy import (
+    Column,
+    Connection,
+    Engine,
+    MetaData,
+    Select,
+    Table,
+    insert,
+    select,
+    text,
+)
+from sqlalchemy.schema import CreateTable, DropTable
+
+from ...references.composition.core import IGettable
+from .core import StepMixin
+
+
+@dataclass(kw_only=True)
+class WithSqlEngine(StepMixin):
     """mixin providing SQL Engine and connectivity check."""
     engine:Engine
 
@@ -17,10 +36,9 @@ class HasSqlEngine(StepMixin):
         super().preflight()
 
 
-@dataclass
-class IGetQueryResult(HasSqlEngine, ABC):
+@dataclass(kw_only=True)
+class ProvidesQueryResults(WithSqlEngine, ABC):
     """mixin wrapping `pd.read_sql` and injecting a kwargs."""
-    _ = KW_ONLY
     read_sql_kwargs:dict|None=None
 
     def get_query_result(self, query:Select, connection:Connection|None=None) -> DataFrame:
@@ -39,7 +57,7 @@ class IGetQueryResult(HasSqlEngine, ABC):
 
 
 @dataclass
-class IModifyOrmQuery(ABC):
+class OrmQueryModifierBase(ABC):
     def modify_metadata(self, metadata:MetaData) -> None:
         ...
 
@@ -49,7 +67,7 @@ class IModifyOrmQuery(ABC):
 
 
 @dataclass
-class ILimitQuery(IModifyOrmQuery):
+class LimitClause(OrmQueryModifierBase):
     count:int|None
 
     def modify_query(self, metadata:MetaData|None, query:Select):
@@ -58,12 +76,6 @@ class ILimitQuery(IModifyOrmQuery):
         
         return query.limit(self.count)
 
-
-from sqlalchemy import Select, MetaData, Engine, TextClause, ColumnElement, Table, Column, Connection, insert
-from sqlalchemy.schema import CreateTable, DropTable
-from itertools import batched
-from contextlib import AbstractContextManager
-from types import TracebackType
 
 @dataclass
 class IdsTempTableContext(AbstractContextManager):
@@ -85,11 +97,9 @@ class IdsTempTableContext(AbstractContextManager):
 
 TEMP_TABLE_NAME = '#TEMP_IDS'
 TEMP_TABLE_COLUMN = '_id'
-from typing import ClassVar, Literal
-import logging
 
 @dataclass
-class IAddInClause(IModifyOrmQuery):
+class InClause(OrmQueryModifierBase):
     values:IGettable[Iterable]|list
     in_table:str
     in_column:str
@@ -124,9 +134,9 @@ class IAddInClause(IModifyOrmQuery):
         )
     
     
-@dataclass
-class IGetQuery(ABC):
-    modifiers:list[IModifyOrmQuery]
+@dataclass(kw_only=True)
+class BuildsQueryBase(ABC):
+    modifiers:list[OrmQueryModifierBase]
     @abstractmethod
     def get_query(self) -> Select:
         ...
@@ -147,13 +157,12 @@ class IGetQuery(ABC):
         return self.modify_query(step, query)
     
 
-@dataclass
-class IGetOrmQuery(IGetQuery, ABC):
+class BuildsOrmQuery(BuildsQueryBase, ABC):
     ...
 
 
-@dataclass
-class IGetTextQuery(IGetQuery):
+@dataclass(kw_only=True)
+class BuildsTextQuery(BuildsQueryBase):
     query:str
     def get_query(self):
         return select(text(self.query))

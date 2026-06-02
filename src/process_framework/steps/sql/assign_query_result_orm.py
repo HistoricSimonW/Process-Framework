@@ -9,7 +9,7 @@ from itertools import batched
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
 import logging
-from process_framework.steps.composition.sql import IAddInClause, TEMP_TABLE_NAME
+from process_framework.steps.composition.sql import InClause, TEMP_TABLE_NAME
 
 MAX_IN_VALUES_LEN = 10_000
 
@@ -49,7 +49,7 @@ class GetOrmQueryResult[T:(DataFrame, Series, Index)](GetSqlQueryResultBase[T], 
         if TEMP_TABLE_NAME in md.tables:
             
             temp_table = md.tables[TEMP_TABLE_NAME]
-            _ids = next(t for t in self.modifiers if isinstance(t, IAddInClause))
+            _ids = next(t for t in self.modifiers if isinstance(t, InClause))
 
             with self.engine.connect() as conn, IdsTempTableContext(conn, temp_table, _ids.get_in_values()):
                 return super().get_query_result(query, conn)

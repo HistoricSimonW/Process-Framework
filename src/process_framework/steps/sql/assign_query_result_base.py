@@ -2,13 +2,13 @@ from process_framework import Reference, AssigningStep
 from abc import ABC
 from pandas import DataFrame, Series, Index
 from typing import Mapping, Callable
-from ..composition.sql import IGetQuery, IGetQueryResult
+from ..composition.sql import BuildsQueryBase, ProvidesQueryResults
 from dataclasses import dataclass
 from typing import cast
 
 
 @dataclass
-class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](IGetQueryResult, IGetQuery, AssigningStep[T], ABC):
+class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](ProvidesQueryResults, BuildsQueryBase, AssigningStep[T], ABC):
     """ base class for Steps that assign the result of Sql queries to `assign_to`"""
     column_as_index:str|list[str]|None=None
     column_mapper:Callable[[str], str]|Mapping[str,str]|None=None

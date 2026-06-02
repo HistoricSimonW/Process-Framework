@@ -14,7 +14,7 @@ from ...step import AssigningStep
 from ..core import HasOutput, ITransformValue, StepMixin
 from .hits import Hit
 
-@dataclass
+@dataclass(kw_only=True)
 class HasElasticsearch(StepMixin):
     """mixin providing an elasticsearch client and connectivity check."""
     elasticsearch:Elasticsearch
@@ -31,7 +31,7 @@ class HasElasticsearchIndexBase(HasElasticsearch):
             raise ValueError(f"{role} index does not exist: {index}")
 
 
-@dataclass
+@dataclass(kw_only=True)
 class HasElasticsearchIndex(HasElasticsearchIndexBase):
     """mixin requiring a generic index and validating its existence."""
     index:str
@@ -40,13 +40,13 @@ class HasElasticsearchIndex(HasElasticsearchIndexBase):
         return super().preflight()
 
 
-@dataclass
+@dataclass(kw_only=True)
 class HasElasticsearchQuery(StepMixin):
     """ mixin for a nullable query """
     query:dict|None=None
 
 
-@dataclass
+@dataclass(kw_only=True)
 class HasElasticsearchTargetIndex(HasElasticsearchIndexBase):
     """mixin requiring a target index and validating its existence."""
     target_index:str
@@ -55,7 +55,7 @@ class HasElasticsearchTargetIndex(HasElasticsearchIndexBase):
         return super().preflight()
     
 
-@dataclass
+@dataclass(kw_only=True)
 class HasElasticsearchSourceIndex(HasElasticsearchIndexBase):
     """mixin requiring a source index and validating its existence."""
     source_index:str
@@ -64,7 +64,7 @@ class HasElasticsearchSourceIndex(HasElasticsearchIndexBase):
         return super().preflight()
 
 
-@dataclass
+@dataclass(kw_only=True)
 class IHasElasticsearchScan[T:BaseModel](HasElasticsearchIndex, HasElasticsearchQuery, HasOutput, StepMixin):
     """mixin for scanning typed elasticsearch hits from an index."""
     raise_on_error:bool=True
