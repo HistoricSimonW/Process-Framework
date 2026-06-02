@@ -2,7 +2,8 @@ from argparse import ArgumentParser
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Any, Self
 from pydantic import BaseModel, Field, field_validator
-
+from pathlib import Path
+from dotenv import load_dotenv
 
 def empty_str_to_none(v:str) -> str|None:
     """ treat an empty string as a None value

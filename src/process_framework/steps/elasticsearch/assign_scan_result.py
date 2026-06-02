@@ -4,34 +4,37 @@ from elasticsearch.client import Elasticsearch
 from elasticsearch.helpers import scan
 from typing import Iterable, Any, cast
 from itertools import islice
-
+from dataclasses import dataclass
 DEFAULT_FILTER_PATH = 'index,took,hits.hits._id,hits.hits._source,_scroll_id,_shards'
 
+@dataclass
 class ScanToDataFrame[T:(Series, DataFrame)](AssigningStep[T]):
     """ assign the result of an ElasticSearch index scan to a context """
-    def __init__(self, assign_to:Reference[T], elasticsearch:Elasticsearch, index:str, source:str|list[str]|bool|None, query:dict[str, Any]|None=None, dtypes:dict[str, Any]|None=None, keep_columns:list[str]|None=None, *, 
-                 limit:int|None=None, size:int=1000, filter_path:str|None=DEFAULT_FILTER_PATH, overwrite:bool=True):
-        super().__init__(assign_to, overwrite=overwrite)
-        self.elasticsearch = elasticsearch
-        self.index = index
-        self.query = query
-        self.size = size
-        self.source = source
-        self.dtypes = dtypes
-        self.keep_columns = keep_columns
-        self.filter_path = filter_path
-        self.limit = limit
+
+    elasticsearch:Elasticsearch
+    index:str
+    query:dict|None=None
+    size:int|None=None
+    source:str|list[str]|None=None
+    dtypes:dict|None=None
+    keep_columns:list[str]|None = None
+    filter_path:str|None=None
+    limit:int|None=None
        
 
     def scan(self) -> Iterable[dict]:
-        return scan(
+        args:dict = dict(
             client=self.elasticsearch,
             query=self.query,
             index=self.index,
-            size=self.size,
             source=self.source,
             filter_path=self.filter_path
         )
+
+        if self.size is not None:
+            args['size'] = self.size
+            
+        return scan(**args)
         
 
     @staticmethod
