@@ -1,6 +1,6 @@
 from typing import Iterable, Callable, Any
-from process_framework.steps.composition.elasticsearch.hits import Hit
-from .elasticsearch import AssignScanResult
+from process_framework.steps.composition.elasticsearch.core import Hit
+from .core import AssignScanResult
 from pandas import DataFrame
 from pydantic import BaseModel
 from dataclasses import dataclass

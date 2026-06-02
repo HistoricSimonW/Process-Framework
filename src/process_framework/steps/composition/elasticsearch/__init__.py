@@ -1,6 +1,5 @@
-from .hits import Hit, Hits
-from .elasticsearch import (
+from process_framework.steps.composition.elasticsearch.core import (
     HasElasticsearch, 
     HasElasticsearchIndex, HasElasticsearchSourceIndex, HasElasticsearchTargetIndex,
-    HasElasticsearchQuery
+    HasElasticsearchQuery, Hit, Hits
 )
