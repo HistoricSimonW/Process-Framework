@@ -9,7 +9,7 @@ from dataclasses import dataclass
 class DataFrameToModels[T:BaseModel](TransformingStep[DataFrame, Series]):
     document_type:Type[T]
 
-    def transform_value(self, input_: DataFrame) -> Series[Any]:
+    def transform_value(self, input_: DataFrame) -> Series:
         df = input_.copy()
         
         # if the df has a named index, get its levels as columns

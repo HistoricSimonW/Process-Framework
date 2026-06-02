@@ -12,6 +12,11 @@ from io import TextIOWrapper
 class HasPath(StepMixin):
     path:Path
 
+    def preflight(self) -> None:
+        if not self.path.exists():
+            raise Exception(f'Path {self.path} does not exist')
+        return super().preflight()
+
 
 class LoadFile[T](HasPath, AssigningStep[T]):
 
@@ -20,8 +25,9 @@ class LoadFile[T](HasPath, AssigningStep[T]):
         ...
 
     def preflight(self) -> None:
-        assert self.path.exists()
-        assert self.path.is_file()
+        if not self.path.is_file():
+            raise Exception(f'Path {self.path} is not a file')
+        return super().preflight()
 
 
 class LoadJson[T:(list, dict)](LoadFile[T]):
@@ -34,7 +40,7 @@ class LoadJson[T:(list, dict)](LoadFile[T]):
         
     def preflight(self) -> None:
         super().preflight()
-        assert 'json' in self.path.name
+        assert 'json' in self.path.suffix
         
 
 class LoadCsvToDataFrame(LoadFile[DataFrame]):
@@ -54,39 +60,3 @@ class LoadCsvToDataFrame(LoadFile[DataFrame]):
     def preflight(self) -> None:
         super().preflight()
         assert 'csv' in self.path.name
-
-
-from ..step import TransformingStep
-from typing import Iterable
-from ...references.composition.core import IGettable
-from dataclasses import dataclass
-
-# sentinel throw object
-_THROW = object() 
-
-@dataclass
-class HasMapper[TIn, TOut](StepMixin):
-    mapper:dict[TIn, TOut] | IGettable[dict[TIn, TOut]]
-    default:TOut | object = _THROW
-
-    def get_mapper(self) -> dict[TIn, TOut]:
-        if isinstance(self.mapper, dict):
-            return self.mapper
-        if isinstance(self.mapper, IGettable):
-            return self.mapper.get_value()
-        raise ValueError()
-
-
-@dataclass
-class MapIter[TIn, TOut](HasMapper, TransformingStep[Iterable[TIn], Iterable[TOut]]):
-
-    def transform_value(self, input_: Iterable[TIn]) -> Iterable[TOut]:
-        mapper = self.get_mapper()
-
-        getter: Callable[[TIn], TOut] = lambda g: mapper.get(g, self.default)
-
-        if self.default is _THROW:
-            getter = lambda g: mapper[g]
-
-        for in_ in input_:
-            yield getter(in_)

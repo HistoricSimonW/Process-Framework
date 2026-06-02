@@ -6,7 +6,8 @@ from abc import ABC
 
 @dataclass
 class Masked:
-    """Mask values for safe display in repr output."""
+    """Mask values for safe display in repr output.\n
+        use as `Annotated[str, Masked(2)]` or `Annotated[str|None, Masked(2)]`"""
     chars:int=4
 
     def mask(self, value) -> str:

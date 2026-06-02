@@ -13,8 +13,8 @@ class EngineArgs(HasMaskedFields, BaseModel):
     """ mixin for settings that describe a database engine """
     host:str
     database:str
-    username:Annotated[str, Masked(2)]|None=None
-    password:Annotated[str, Masked(2)]|None=None
+    username:Annotated[str|None, Masked(2)]=None
+    password:Annotated[str|None, Masked(2)]=None
     drivername:str
     query:EngineQueryArgs
 
