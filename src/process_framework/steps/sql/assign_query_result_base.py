@@ -23,7 +23,10 @@ class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](ProvidesQueryResults, 
         if output_type == DataFrame:
             return cast(T, result)
         
-        if output_type == Index and self.column_as_index is not None and self.column_as_index in result.index.names:
+        if output_type == Index and (
+            (isinstance(self.column_as_index, str) and self.column_as_index in result.index.names) or
+            (isinstance(self.column_as_index, list) and all(t in result.index.names for t in self.column_as_index))
+        ):
             return cast(T, result.index)
         
         if output_type == Series and self.column_as_series is not None:
