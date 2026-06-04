@@ -16,7 +16,7 @@ class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](ProvidesQueryResults, 
     dtypes:dict[str, Any]|None=None
 
 
-    def on_transform_result(self, result:DataFrame) -> T:
+    def _cast_result_to_type(self, result:DataFrame) -> T:
         """ handle the result DataFrame into the required output type """
         output_type = self.output_.get_type()
 
@@ -27,7 +27,7 @@ class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](ProvidesQueryResults, 
             return cast(T, result.index)
         
         if output_type == Series and self.column_as_series is not None:
-            if len(result.columns == 0):
+            if len(result.columns) == 0:
                 self._warn("got result with zero columns, returning an empty Series")
                 return cast(T, Series([], name=self.column_as_series))
             
@@ -38,9 +38,16 @@ class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](ProvidesQueryResults, 
 
         raise Exception(f"`assign_to` expects a `{output_type}`, but `result` is {type(result)}")
 
+
+    def on_transform_result(self, result:DataFrame) -> DataFrame:
+        """ overwrite this to modify the query result DataFrame before it is cast to the result type
+            this is the place to do any bespoke text transformations or other conditional logic """
+        return result
     
     def transform_result(self, result:DataFrame) -> T:
-        """ apply renames and indexing, then return the typed result via `on_transform_result` """
+        """ apply renames and indexing, 
+            pass the result through `on_transform_result` 
+            then return the typed result via `_cast_result_to_type` """
         if self.column_mapper is not None:
             result = result.rename(self.column_mapper, axis=1)
         
@@ -50,7 +57,9 @@ class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](ProvidesQueryResults, 
         if self.dtypes is not None:
             result = result.astype(self.dtypes)
 
-        return self.on_transform_result(result)
+        result = self.on_transform_result(result)
+
+        return self._cast_result_to_type(result)
 
     
     def generate_value(self) -> T | None:
