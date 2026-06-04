@@ -116,12 +116,13 @@ class InClause(OrmQueryModifierBase):
 
             if v is None:
                 continue
-            # this should drop pandas NAs
+
+            # this drops pandas NAs
             try:
                 if bool(v != v):
                     continue
             except Exception:
-                pass
+                continue
 
             filtered.append(v)
 
