@@ -80,6 +80,7 @@ class ScanToDataFrame[T:(DataFrame, Series, Index)](AssigningStep[T]):
 
         return df
 
+
     def transform_result(self, result:DataFrame) -> T:
         # this needs overwriting if the default cases (DataFrame, Series and single-element 'field') are not true
         assert isinstance(result, DataFrame), "expected result to be a DataFrame"
@@ -102,6 +103,7 @@ class ScanToDataFrame[T:(DataFrame, Series, Index)](AssigningStep[T]):
         """ overwrite this to modify the query result DataFrame before it is cast to the result type
             this is the place to do any bespoke text transformations or other conditional logic """
         return result
+
 
     def _cast_result_to_type(self, result:DataFrame) -> T:
         """ handle the result DataFrame into the required output type """
@@ -138,7 +140,7 @@ class ScanToDataFrame[T:(DataFrame, Series, Index)](AssigningStep[T]):
         return result
 
 
-    def generate(self) -> T:
+    def generate_value(self) -> T:
         hits = self.scan()
         result = ScanToDataFrame.hits_to_dataframe(hits, self.dtypes, self.keep_columns, self.limit)
         result = self.handle_empty_result(result)
