@@ -106,7 +106,28 @@ class InClause(OrmQueryModifierBase):
     in_table:str
     in_column:str
     values_type:Any
-    
+    drop_none:bool=True
+
+    @staticmethod
+    def _drop_none(values:list) -> list:
+        filtered = []
+
+        for v in values:
+
+            if v is None:
+                continue
+            # this should drop pandas NAs
+            try:
+                if bool(v != v):
+                    continue
+            except Exception:
+                pass
+
+            filtered.append(v)
+
+        return filtered
+
+
     def get_in_values(self) -> list:
         
         values = self.values
@@ -117,8 +138,12 @@ class InClause(OrmQueryModifierBase):
         if not isinstance(values, list):
             values = list(values)
         
+        if self.drop_none:
+            values = InClause._drop_none(values)
+
         if self.values_type == Integer:
             values = [int(v) for v in values]
+
         elif self.values_type == String:
             values = [str(v) for v in values]
         
