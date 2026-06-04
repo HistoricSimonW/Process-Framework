@@ -25,6 +25,7 @@ class ScanToDataFrame[T:(DataFrame, Series, Index)](AssigningStep[T]):
     column_mapper:Callable[[str], str]|Mapping[str,str]|None=None
     column_as_series:str|None=None
     drop_index_column:bool=True
+    append_index_column:bool=True
     dtypes:dict[str, Any]|None=None
        
 
@@ -84,7 +85,7 @@ class ScanToDataFrame[T:(DataFrame, Series, Index)](AssigningStep[T]):
             df = df[df.columns.intersection(columns)]
         
         df = df.reset_index()
-        
+
         # apply `dtypes` to columns that exist in the DataFrame
         if isinstance(dtypes, dict):
             df = df.astype({k:v for k, v in dtypes.items() if k in df.columns})
@@ -97,10 +98,17 @@ class ScanToDataFrame[T:(DataFrame, Series, Index)](AssigningStep[T]):
         assert isinstance(result, DataFrame), "expected result to be a DataFrame"
 
         if self.column_mapper is not None:
-            result = result.rename(self.column_mapper, axis=1)
+            result = result.rename(
+                self.column_mapper, 
+                axis=1
+            )
         
         if self.column_as_index is not None:
-            result = result.set_index(self.column_as_index, drop=self.drop_index_column)
+            result = result.set_index(
+                self.column_as_index, 
+                drop=self.drop_index_column,
+                append=self.append_index_column
+            )
 
         if self.dtypes is not None:
             result = result.astype(self.dtypes)
