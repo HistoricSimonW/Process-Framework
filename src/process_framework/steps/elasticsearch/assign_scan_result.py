@@ -1,25 +1,31 @@
 from process_framework import AssigningStep, Reference
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, Index
 from elasticsearch.client import Elasticsearch
 from elasticsearch.helpers import scan
-from typing import Iterable, Any, cast
+from typing import Iterable, Any, cast, Callable, Mapping
 from itertools import islice
 from dataclasses import dataclass
 DEFAULT_FILTER_PATH = 'index,took,hits.hits._id,hits.hits._source,_scroll_id,_shards'
 
-@dataclass
-class ScanToDataFrame[T:(Series, DataFrame)](AssigningStep[T]):
+@dataclass(kw_only=True)
+class ScanToDataFrame[T:(DataFrame, Series, Index)](AssigningStep[T]):
     """ assign the result of an ElasticSearch index scan to a context """
-
+    # query args
     elasticsearch:Elasticsearch
     index:str
     query:dict|None=None
     size:int|None=None
     source:str|list[str]|None=None
-    dtypes:dict|None=None
-    keep_columns:list[str]|None = None
     filter_path:str|None=None
     limit:int|None=None
+
+    # processing args
+    keep_columns:list[str]|None=None
+    column_as_index:str|list[str]|None=None
+    column_mapper:Callable[[str], str]|Mapping[str,str]|None=None
+    column_as_series:str|None=None
+    drop_index_column:bool=True
+    dtypes:dict[str, Any]|None=None
        
 
     def scan(self) -> Iterable[dict]:
@@ -78,32 +84,49 @@ class ScanToDataFrame[T:(Series, DataFrame)](AssigningStep[T]):
         # this needs overwriting if the default cases (DataFrame, Series and single-element 'field') are not true
         assert isinstance(result, DataFrame), "expected result to be a DataFrame"
 
-        # if we're assigning a DataFrame, return the result
-        if self.output_.get_type() is DataFrame:
-            return cast(T, result)
+        if self.column_mapper is not None:
+            result = result.rename(self.column_mapper, axis=1)
+        
+        if self.column_as_index is not None:
+            result = result.set_index(self.column_as_index, drop=self.drop_index_column)
 
-        # we need a bit more logic to handle Series
+        if self.dtypes is not None:
+            result = result.astype(self.dtypes)
+
+        result = self.on_transform_result(result)
+
+        return self._cast_result_to_type(result)
+
+
+    def on_transform_result(self, result:DataFrame) -> DataFrame:
+        """ overwrite this to modify the query result DataFrame before it is cast to the result type
+            this is the place to do any bespoke text transformations or other conditional logic """
+        return result
+
+    def _cast_result_to_type(self, result:DataFrame) -> T:
+        """ handle the result DataFrame into the required output type """
+        output_type = self.output_.get_type()
+
+        if output_type == DataFrame:
+            return cast(T, result)
         
-        # if we're assigning to something other than a Series, we've done something wrong
-        if self.output_.get_type() is not Series:
-            raise TypeError(f"`assign_to._type` should be in (Series, DataFrame), got `{self.output_.get_type()}`")
+        if output_type == Index and (
+            (isinstance(self.column_as_index, str) and self.column_as_index in result.index.names) or
+            (isinstance(self.column_as_index, list) and all(t in result.index.names for t in self.column_as_index))
+        ):
+            return cast(T, result.index)
         
-        # if the result is empty, early escape
-        if result.empty:
-            return cast(T, Series())
-                
-        if isinstance(self.keep_columns, list) and len(self.keep_columns) == 1:
-            column = self.keep_columns[0]
-        elif isinstance(self.source, list) and len(self.source) == 1:
-            column = self.source[0]
-        elif isinstance(self.source, str) and ',' not in self.source and '*' not in self.source:
-            column = self.source
-        else:
-            raise ValueError(f"could not infer single column from `keep_columns`:{self.keep_columns} or `source`:{self.source}")
-        
-        assert isinstance(column, str)
-        
-        return cast(T, result[column])
+        if output_type == Series and self.column_as_series is not None:
+            if len(result.columns) == 0:
+                self._warn("got result with zero columns, returning an empty Series")
+                return cast(T, Series([], name=self.column_as_series))
+            
+            if self.column_as_series in result.columns:
+                return cast(T, result[self.column_as_series])
+            else:
+                self._warn(f"column `{self.column_as_series}` was not a name in `result`'s columns; has it been changed by `column_mapper` {self.column_mapper}?")
+
+        raise Exception(f"`assign_to` expects a `{output_type}`, but `result` is {type(result)}")
 
 
     def handle_empty_result(self, result:DataFrame) -> DataFrame:
