@@ -46,8 +46,13 @@ class ScanToDataFrame[T:(DataFrame, Series, Index)](AssigningStep[T]):
     @staticmethod
     def hits_to_dataframe(hits:Iterable[dict], dtypes:dict[str,Any]|None=None, columns:list[str]|None=None, limit:int|None=None):
         # build an `_id`-indexed dataframe from the `hits` iterator
+        records = list(islice(hits, limit))
+        
+        if not records:
+            return DataFrame()
+        
         df:DataFrame = DataFrame.from_records(
-            islice(hits, limit),  # type: ignore
+            records,  # type: ignore
             index='_id', 
             columns=['_id', '_index', '_source', '_fields']
         )
