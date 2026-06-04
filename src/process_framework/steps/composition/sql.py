@@ -98,6 +98,8 @@ class IdsTempTableContext(AbstractContextManager):
 TEMP_TABLE_NAME = '#TEMP_IDS'
 TEMP_TABLE_COLUMN = '_id'
 
+from sqlalchemy import Integer, String
+
 @dataclass
 class InClause(OrmQueryModifierBase):
     values:IGettable[Iterable]|list
@@ -106,14 +108,22 @@ class InClause(OrmQueryModifierBase):
     values_type:Any
     
     def get_in_values(self) -> list:
-
-        if isinstance(self.values, list):
-            return self.values
         
-        if isinstance(self.values, IGettable):
-            return list(self.values.get_value())
+        values = self.values
 
-        raise ValueError()
+        if isinstance(values, IGettable):
+            values = list(values.get_value())
+
+        if not isinstance(values, list):
+            values = list(values)
+        
+        if self.values_type == Integer:
+            values = [int(v) for v in values]
+        elif self.values_type == String:
+            values = [str(v) for v in values]
+        
+        return values
+        
     
 
     def modify_metadata(self, metadata:MetaData) -> None:
