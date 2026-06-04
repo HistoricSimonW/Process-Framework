@@ -105,7 +105,7 @@ class ScanToDataFrame[T: (DataFrame, Series, Index)](AssigningStep[T]):
 
         # Preserve requested order and include missing requested columns.
         for col in columns:
-            if col not in df.columns:
+            if col not in df.columns or col not in df.index:
                 df[col] = NA
 
         return df[columns]
@@ -136,7 +136,7 @@ class ScanToDataFrame[T: (DataFrame, Series, Index)](AssigningStep[T]):
         if self.column_as_index is None:
             return result
 
-        return result.set_index(self.column_as_index, drop=self.drop_index_column)
+        return result.reset_index().set_index(self.column_as_index, drop=self.drop_index_column)
 
     def apply_dtypes(self, result: DataFrame) -> DataFrame:
         if self.dtypes is None:
