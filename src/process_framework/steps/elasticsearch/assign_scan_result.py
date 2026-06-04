@@ -77,7 +77,13 @@ class ScanToDataFrame[T:(DataFrame, Series, Index)](AssigningStep[T]):
 
         # if `columns` has been passed as a list, keep only those columns
         if isinstance(columns, list):
+            for col in columns:
+                if col not in columns:
+                    df[col] = None
+
             df = df[df.columns.intersection(columns)]
+        
+        df = df.reset_index()
         
         # apply `dtypes` to columns that exist in the DataFrame
         if isinstance(dtypes, dict):
