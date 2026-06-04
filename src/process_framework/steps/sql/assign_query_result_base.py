@@ -1,19 +1,19 @@
 from process_framework import Reference, AssigningStep
 from abc import ABC
 from pandas import DataFrame, Series, Index
-from typing import Mapping, Callable
+from typing import Mapping, Callable, cast, Any
 from ..composition.sql import BuildsQueryBase, ProvidesQueryResults
 from dataclasses import dataclass
-from typing import cast
 
 
-@dataclass
+@dataclass(kw_only=True)
 class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](ProvidesQueryResults, BuildsQueryBase, AssigningStep[T], ABC):
     """ base class for Steps that assign the result of Sql queries to `assign_to`"""
     column_as_index:str|list[str]|None=None
     column_mapper:Callable[[str], str]|Mapping[str,str]|None=None
     column_as_series:str|None=None
     drop_index_column:bool=True
+    dtypes:dict[str, Any]|None=None
 
 
     def on_transform_result(self, result:DataFrame) -> T:
@@ -46,6 +46,9 @@ class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](ProvidesQueryResults, 
         
         if self.column_as_index is not None:
             result = result.set_index(self.column_as_index, drop=self.drop_index_column)
+
+        if self.dtypes is not None:
+            result = result.astype(self.dtypes)
 
         return self.on_transform_result(result)
 

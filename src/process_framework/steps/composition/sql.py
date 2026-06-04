@@ -136,7 +136,7 @@ class InClause(OrmQueryModifierBase):
     
 @dataclass(kw_only=True)
 class BuildsQueryBase(ABC):
-    modifiers:list[OrmQueryModifierBase]
+    modifiers:list[OrmQueryModifierBase]|None=None
     @abstractmethod
     def get_query(self) -> Select:
         ...

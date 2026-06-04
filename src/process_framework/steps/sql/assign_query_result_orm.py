@@ -13,7 +13,7 @@ from process_framework.steps.composition.sql import InClause, TEMP_TABLE_NAME
 
 MAX_IN_VALUES_LEN = 10_000
 
-@dataclass
+@dataclass(kw_only=True)
 class GetOrmQueryResult[T:(DataFrame, Series, Index)](GetSqlQueryResultBase[T], ABC):
     """ get the result of a query defined using the sqlalchemy ORM"""
 
@@ -30,8 +30,9 @@ class GetOrmQueryResult[T:(DataFrame, Series, Index)](GetSqlQueryResultBase[T], 
         self.populate_metadata(metadata)
 
         # if we have _ids, we need a 'temp table' definition in our metadata
-        for mod in self.modifiers:
-            mod.modify_metadata(metadata)
+        if self.modifiers is not None:
+            for mod in self.modifiers:
+                mod.modify_metadata(metadata)
 
         return metadata
 
@@ -46,7 +47,8 @@ class GetOrmQueryResult[T:(DataFrame, Series, Index)](GetSqlQueryResultBase[T], 
     def get_query_result(self, query: Select, connection:Connection|None=None) -> DataFrame:
         # if we have _ids, execute the query in a temp table context managed by a context manager
         md = self.metadata
-        if TEMP_TABLE_NAME in md.tables:
+
+        if TEMP_TABLE_NAME in md.tables and self.modifiers is not None:
             
             temp_table = md.tables[TEMP_TABLE_NAME]
             _ids = next(t for t in self.modifiers if isinstance(t, InClause))
