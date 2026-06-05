@@ -24,8 +24,8 @@ from .settings import SettingsBase
 from ..exceptions import EarlyEscape
 from ..composition.core import HasLogger
 
-@dataclass
-class PipelineBuilder[
+@dataclass(kw_only=True)
+class PipelineBuilderBase[
     TSettings:SettingsBase,
     TReferences:ReferenceGraphBase,
     TClients:ClientsBase

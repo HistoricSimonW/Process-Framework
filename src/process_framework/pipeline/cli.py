@@ -19,7 +19,7 @@ import sys
 from logging.handlers import RotatingFileHandler
 from logging import Logger
 from process_framework.pipeline import Pipeline
-from process_framework.pipeline.pipeline import PipelineBuilder
+from process_framework.pipeline.pipeline import PipelineBuilderBase
 from pathlib import Path
 from typing import Sequence
 from abc import ABC, abstractmethod
@@ -49,7 +49,7 @@ class CliBase(ABC):
 
 
     @abstractmethod
-    def initialize_builder(self, argsv: Sequence[str] | None) -> PipelineBuilder:
+    def initialize_builder(self, argsv: Sequence[str] | None) -> PipelineBuilderBase:
         """Initialize the builder for this CLI invocation."""
         ...
 
