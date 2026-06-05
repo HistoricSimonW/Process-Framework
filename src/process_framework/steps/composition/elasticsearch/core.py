@@ -79,8 +79,16 @@ class HasElasticsearchIndexBase(HasElasticsearch):
 class HasElasticsearchIndex(HasElasticsearchIndexBase):
     """mixin requiring a generic index and validating its existence."""
     index:str
+    assert_index_exists:bool=True
+
     def preflight(self) -> None:
-        self.check_index(self.index, 'index')
+        try:
+            self.check_index(self.index, 'index')
+        except ValueError as e:
+            if not self.assert_index_exists:
+                self._info(f'index `{self.index}` does not exist')
+            else:
+                raise e
         return super().preflight()
 
 
@@ -174,4 +182,3 @@ class AssignScanResultList[T: BaseModel](AssignScanResult[T, list[Hit[T]]]):
     def transform_value(self, input_: Iterable[Hit[T]]) -> list[Hit[T]]:
         """materialize scanned hits as a list."""
         return list(input_)
-    

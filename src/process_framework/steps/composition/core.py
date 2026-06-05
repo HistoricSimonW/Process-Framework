@@ -27,18 +27,18 @@ class StepMixin(Preflightable, ABC):
         super().preflight()
 
 
-@dataclass
+@dataclass(kw_only=True)
 class HasInput[T](StepMixin):
     """mixin providing an input value source."""
     input_:IGettable[T]
+   
 
-
-@dataclass
+@dataclass(kw_only=True)
 class HasOptionalOutput[T](StepMixin):
     output_ : ISettable[T]|None
-
     
-@dataclass
+
+@dataclass(kw_only=True)
 class HasOutput[T](StepMixin):
     """mixin providing an output value sink."""
     output_ : ISettable[T]

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 def _get_id(hit:Hit) -> str:
     return hit.id
 
-@dataclass
+@dataclass(kw_only=True)
 class AssignScanResultDataFrame[T:BaseModel](AssignScanResult[T, DataFrame]):
     """assign scanned hits as a pandas DataFrame."""
     set_index:str|None=None
