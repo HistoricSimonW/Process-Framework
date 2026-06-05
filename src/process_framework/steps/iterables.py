@@ -43,3 +43,15 @@ class MapIter[TIn, TOut](HasMapper, TransformingStep[Iterable[TIn], Iterable[TOu
 
         for in_ in input_:
             yield getter(in_)
+
+
+@dataclass
+class ConcatIters[T](AssigningStep[Iterable[T]]):
+    iterables:list[Iterable[T]|IGettable[Iterable[T]]]
+
+    def generate_value(self) -> Iterable[T] | None:
+        for iterable in self.iterables:
+            if isinstance(iterable, IGettable):
+                iterable = iterable.get_value()
+            
+            yield from iterable
