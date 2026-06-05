@@ -32,6 +32,7 @@ class DetectUpdates(HasLocalAndRemote[Index], AssigningStep[Index]):
         return local.difference(remote).get_level_values(0)
     
 
+@dataclass(kw_only=True)
 class DetectDeletions(HasLocalAndRemote[Index], AssigningStep[Index]):
     """ return items in Remote that are not in Local """
     def generate_value(self) -> Index | None:
