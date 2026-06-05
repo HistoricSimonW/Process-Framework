@@ -36,7 +36,6 @@ class PipelineBuilder[
     clients:TClients
     
     @classmethod
-    @abstractmethod
     def from_environment(cls, 
                          t_settings:type[TSettings], 
                          t_references:type[TReferences], 

@@ -4,24 +4,23 @@ from typing import Any
 from typing import Iterable
 from itertools import batched
 import logging
+from dataclasses import dataclass
+from process_framework.steps.composition.elasticsearch import HasElasticsearch, HasElasticsearchIndex
+from process_framework.steps.composition.core import HasInput
+from process_framework.references.composition.core import ISettable
 
-class DeleteByTerms(Step):
+@dataclass(kw_only=True)
+class DeleteByTerms(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable], Step):
     """ delete docs matching a `terms` query on values in the `subject` """
-    def __init__(self, subject:Reference[Iterable], elasticsearch:Elasticsearch, index:str, field:str, *, assign_result:Reference[Any]|None=None, assert_index_exists:bool=True):
-        super().__init__()
-        self.subject = subject
-        self.elasticsearch = elasticsearch
-        self.index = index
-        self.field = field
-        self.assign_result = assign_result
-        self.assert_index_exists = assert_index_exists
-        self.batch_size = 200
+    field:str
+    batch_size:int = 200
 
 
     def do(self):
-        terms = self.subject.get_value()
+        terms = self.input_.get_value()
         batches = batched(terms, self.batch_size)
-        for batch in batches:
+        self._info('performing `delete_by_query` with a terms query')
+        for i, batch in enumerate(batches):
             result = self.elasticsearch.delete_by_query(
                 index=self.index,
                 query={
@@ -30,10 +29,9 @@ class DeleteByTerms(Step):
                     }
                 }
             )
-            logging.info(f'{result}')
+            self._info(f'{i}:{result}')
             
     
-        
     def preflight(self):
         assert self.elasticsearch.info()
         assert self.elasticsearch.indices.exists(index=self.index)
