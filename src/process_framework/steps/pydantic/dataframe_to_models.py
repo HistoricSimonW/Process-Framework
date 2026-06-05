@@ -8,7 +8,7 @@ from process_framework.helpers.pydantic import gen_models_from_records
 
 @dataclass
 class GetModelsForDataFrame[T:BaseModel](TransformingStep[DataFrame, Series]):
-    document_type:Type[T]
+    model_type:Type[T]
 
     def transform_value(self, input_: DataFrame) -> Series:
         df = input_.copy()
@@ -19,12 +19,12 @@ class GetModelsForDataFrame[T:BaseModel](TransformingStep[DataFrame, Series]):
                 df[n] = df.index.get_level_values(i)
 
         # construct documents by passing each row (axis=1) of the dataframe to the `document_type` constructor
-        return df.apply(lambda row: row.dropna().to_dict(), axis=1).map(self.document_type.model_validate)
+        return df.apply(lambda row: row.dropna().to_dict(), axis=1).map(self.model_type.model_validate)
     
 
 @dataclass
 class GenModelsForDataFrame[T:BaseModel](TransformingStep[DataFrame, Iterable[T]]):
-    document_type:Type[T]
+    model_type:Type[T]
 
     def transform_value(self, input_: DataFrame) -> Iterable[T]:
         df = input_.copy()
@@ -35,11 +35,11 @@ class GenModelsForDataFrame[T:BaseModel](TransformingStep[DataFrame, Iterable[T]
                 df[n] = df.index.get_level_values(i)
 
         
-        def gen_rows() -> Iterable[Series]:
+        def gen_records() -> Iterable[dict]:
             for _, row in df.iterrows():
-                yield row
+                yield row.dropna().to_dict()
 
         return gen_models_from_records(
-            type=self.document_type,
-            records=gen_rows()
+            type=self.model_type,
+            records=gen_records()
         )
