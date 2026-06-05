@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from process_framework.helpers.pydantic import gen_models_from_records
 
 @dataclass
-class DataFrameToModels[T:BaseModel](TransformingStep[DataFrame, Series]):
+class GetModelsForDataFrame[T:BaseModel](TransformingStep[DataFrame, Series]):
     document_type:Type[T]
 
     def transform_value(self, input_: DataFrame) -> Series:
