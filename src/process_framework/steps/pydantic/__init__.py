@@ -1,1 +1,1 @@
-from .dataframe_to_models import DataFrameToModels
+from .dataframe_to_models import GetModelsForDataFrame, GenModelsForDataFrame

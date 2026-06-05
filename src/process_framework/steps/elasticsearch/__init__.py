@@ -1,5 +1,4 @@
-from .document import DocumentBaseModel
-from ..pydantic.dataframe_to_models import DataFrameToModels
+from ..composition.elasticsearch.document import DocumentBase
 from .index_documents import IndexDocuments
 from .assign_scan_result import AssignScanResult
 from .delete_by_id import DeleteById
