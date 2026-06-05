@@ -13,7 +13,7 @@ class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](ProvidesQueryResults, 
     column_mapper:Callable[[str], str]|Mapping[str,str]|None=None
     column_as_series:str|None=None
     drop_index_column:bool=True
-    dtypes:dict[str, Any]|None=None
+    dtypes:dict[str, Any]|type|str|None=None
 
 
     def _cast_result_to_type(self, result:DataFrame) -> T:
@@ -47,6 +47,7 @@ class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](ProvidesQueryResults, 
             this is the place to do any bespoke text transformations or other conditional logic """
         return result
     
+
     def transform_result(self, result:DataFrame) -> T:
         """ apply renames and indexing, 
             pass the result through `on_transform_result` 
@@ -54,11 +55,11 @@ class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](ProvidesQueryResults, 
         if self.column_mapper is not None:
             result = result.rename(self.column_mapper, axis=1)
         
+        if self.dtypes is not None:
+            result = result.astype(self.dtypes) # type:ignore
+
         if self.column_as_index is not None:
             result = result.set_index(self.column_as_index, drop=self.drop_index_column)
-
-        if self.dtypes is not None:
-            result = result.astype(self.dtypes)
 
         result = self.on_transform_result(result)
 
