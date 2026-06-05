@@ -34,6 +34,11 @@ class HasInput[T](StepMixin):
 
 
 @dataclass
+class HasOptionalOutput[T](StepMixin):
+    output_ : ISettable[T]|None
+
+    
+@dataclass
 class HasOutput[T](StepMixin):
     """mixin providing an output value sink."""
     output_ : ISettable[T]

@@ -1,69 +1,60 @@
 from process_framework import Step, Reference
-from .document import DocumentBaseModel
 from pandas import Series
 from elasticsearch.client import Elasticsearch
 from elasticsearch.helpers import bulk
 from typing import Any, Tuple
 from logging import info
+from typing import NamedTuple, Iterable
+from dataclasses import dataclass
+from process_framework.steps import Step
+from process_framework.steps.composition.core import HasInput, HasOptionalOutput
+from process_framework.steps.composition.elasticsearch.core import HasElasticsearch, HasElasticsearchIndex
+from process_framework.steps.composition.elasticsearch.document import DocumentBase
 
 # https://elasticsearch-py.readthedocs.io/en/v8.2.2/helpers.html
-class IndexDocuments(Step):
+@dataclass(kw_only=True)
+class IndexDocuments(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[DocumentBase]], HasOptionalOutput[Any], Step):
     """ index a `Series` of `Documents` using elasticsearch.helpers.bulk """
-    def __init__(self, subject:Reference[Series], elasticsearch:Elasticsearch, index:str, pipeline:str|None=None, *, assign_result:Reference[Tuple]|None=None, assert_index_exists:bool=True,
-                 raise_on_error:bool=True, raise_on_exception:bool=True, max_retries:int=0, initial_backoff:int=2, 
-                 chunk_size:int=500, max_chunk_bytes:int=104857600, bulk_kwargs:dict[str, Any]|None=None):
-        super().__init__()
-        self.subject = subject
-        self.elasticsearch = elasticsearch
-        self.index = index
-        self.pipeline= pipeline
-        self.assert_exists=assert_index_exists
-        self.assign_result = assign_result
+    pipeline:str|None=None 
+    
+    assert_index_exists:bool=True
 
-        # initialize bulk_kwargs with the provided dict, or an empty one
-        self.bulk_kwargs = bulk_kwargs if isinstance(bulk_kwargs, dict) else dict()
+    raise_on_error:bool=True
+    raise_on_exception:bool=True 
+    max_retries:int=0
+    initial_backoff:int=2 
+    chunk_size:int=500
+    max_chunk_bytes:int=104857600 
+    bulk_kwargs:dict[str, Any]|None=None
         
-        # update bulk_kwargs with named args
-        self.bulk_kwargs |= dict(
-            raise_on_error=raise_on_error,
-            raise_on_exception=raise_on_exception,
-            max_retries=max_retries,
-            initial_backoff=initial_backoff,
-            chunk_size=chunk_size,
-            max_chunk_bytes = max_chunk_bytes
-        )
+    def get_bulk_kwargs(self) -> dict:
+        
+        kwargs = self.bulk_kwargs or dict()
 
+        # update bulk_kwargs with named args
+        kwargs.update(dict(
+            raise_on_error=self.raise_on_error,
+            raise_on_exception=self.raise_on_exception,
+            max_retries=self.max_retries,
+            initial_backoff=self.initial_backoff,
+            chunk_size=self.chunk_size,
+            max_chunk_bytes = self.max_chunk_bytes
+        ))
+
+        return kwargs
+    
 
     def do(self):
-        # perform assertions
-        assert self.subject.has_value()
-        
-        # generate actions
-        series:Series = self.subject.get_value() # type: ignore
-        actions = DocumentBaseModel.gen_bulk_index_actions(
-            index=self.index,
-            documents=series.values
-        )
+        docs = self.input_.get_value()
+        kwargs = self.get_bulk_kwargs()
 
-        # perform bulk
         result = bulk(
-            client=self.elasticsearch,
-            actions=actions,
+            self.elasticsearch,
+            actions=DocumentBase.gen_bulk_index_actions(self.index, docs),
             index=self.index,
             pipeline=self.pipeline,
-            **self.bulk_kwargs
+            **kwargs
         )
-        
-        # I don't do anything with the result (yet)
-        if self.assign_result is not None:
-            self.assign_result.set_value(result)
-            
-        info(f'{result}')
 
-
-    def preflight(self):
-        assert self.elasticsearch.info()
-        if self.assert_exists:
-            assert self.elasticsearch.indices.exists(index=self.index)
-        if self.pipeline:
-            assert self.elasticsearch.ingest.get_pipeline(id=self.pipeline)
+        if self.output_ is not None:
+            self.output_.set_value(result)

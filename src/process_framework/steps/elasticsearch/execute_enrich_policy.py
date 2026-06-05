@@ -1,21 +1,23 @@
 from ..step import Step
-from elasticsearch.client import Elasticsearch
 from elasticsearch import NotFoundError
 from logging import info
 from time import sleep
+from dataclasses import dataclass
+from process_framework.steps.composition.elasticsearch.core import HasElasticsearch
 
 # https://elasticsearch-py.readthedocs.io/en/v8.2.2/api.html?highlight=execute#elasticsearch.client.EnrichClient.execute_policy:~:text=the%20enrich%20policy-,execute,_policy,-(*%2C%20name%3A%20str
-class ExecutePolicy(Step):
-    """ execute the specified enrich policy """
-    def __init__(self, elasticsearch:Elasticsearch, policy:str, await_task:bool=True, await_task_interval:float=1, await_task_timeout:int=120) -> None:
-        self.elasticsearch = elasticsearch
-        self.policy = policy
-        self.await_task = await_task
-        self.await_task_interval = await_task_interval
-        self.await_task_timeout = await_task_timeout
 
+@dataclass(kw_only=True)
+class ExecutePolicy(HasElasticsearch, Step):
+    """ execute the specified enrich policy """
+    policy:str
+    await_task:bool=True
+    await_task_interval:float=1
+    await_task_timeout:int=120
+    
 
     def do(self):
+        # get the enrich client
         enrich = self.elasticsearch.enrich
         
         response = enrich.execute_policy(

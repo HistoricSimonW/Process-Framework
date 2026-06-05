@@ -76,6 +76,35 @@ class DocumentBase(BaseModel, ABC):
         for record in records:
             yield cls.from_record(record)
 
+    
+    def _get_source(self, exclude_none:bool=True, **kwargs) -> dict:
+        """ get the json `source` of this doc, ready to be returned as part of an `index` or `bulk_index` action
+            this pops `id`, if it's part of the doc; it should be handled separately """
+        _source = self.model_dump(
+            mode='json',
+            exclude_none=exclude_none,
+            **kwargs
+        )
+        _source.pop('id', None) # remove `id` if it's present
+        return _source
+    
+
+    def get_bulk_index_action(self, index:str) -> dict:
+        """ get a dict that can be passed to the elasticsearch.helpers.bulk api """
+        return dict(
+            _index=index,
+            _op_type='index',
+            _id=self._id,
+            _source=self._get_source()
+        )
+    
+    
+    @staticmethod
+    def gen_bulk_index_actions[T:'DocumentBase'](index:str, documents: Iterable[T]) -> Iterable[dict]:
+        """ gennerate an Iterable of bulk index actions for an iterable of `Document`s """
+        for doc in documents:
+            yield doc.get_bulk_index_action(index)
+
 
 if __name__ == '__main__':
     # demo a class with a defined ID
@@ -100,3 +129,14 @@ if __name__ == '__main__':
     implicit = WithLabelledId(code='1121')
     print(implicit)
     print(implicit.model_dump(exclude_unset=True))
+
+
+
+#TODO: update 'field:type = Field(serialization_alias='field') note and example
+"""
+A few of these implement a pattern of `field:type = Field(serialization_alias='_field', alias='_field')`
+this is becauase the elasticsearch data model for LHH escapes a few reserved words (_type, _id) with underscores
+but pydantic treats underscored fields as private and doesn't serialize them
+we can work around this by modelling the fields as un-underscored, but serializing them by alias
+"""
+    
