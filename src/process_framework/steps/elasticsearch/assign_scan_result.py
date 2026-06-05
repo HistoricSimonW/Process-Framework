@@ -14,8 +14,8 @@ HIT_COLUMNS = ["_id", "_index", "_source", "_fields"]
 
 
 @dataclass(kw_only=True)
-class ScanToDataFrame[T: (DataFrame, Series, Index)](AssigningStep[T]):
-    """Assign the result of an Elasticsearch scan to a process-framework Reference."""
+class AssignScanResult[T: (DataFrame, Series, Index)](AssigningStep[T]):
+    """Assign the result of an Elasticsearch scan to a typed Reference."""
 
     # query args
     elasticsearch: Elasticsearch
@@ -58,11 +58,11 @@ class ScanToDataFrame[T: (DataFrame, Series, Index)](AssigningStep[T]):
         records = list(islice(hits, limit))
 
         if not records:
-            return ScanToDataFrame.empty_dataframe(columns)
+            return AssignScanResult.empty_dataframe(columns)
 
-        df = ScanToDataFrame.records_to_dataframe(records)
-        df = ScanToDataFrame.expand_hit_columns(df)
-        df = ScanToDataFrame.keep_requested_columns(df, columns)
+        df = AssignScanResult.records_to_dataframe(records)
+        df = AssignScanResult.expand_hit_columns(df)
+        df = AssignScanResult.keep_requested_columns(df, columns)
 
         return df
 
@@ -79,7 +79,7 @@ class ScanToDataFrame[T: (DataFrame, Series, Index)](AssigningStep[T]):
     @staticmethod
     def expand_hit_columns(df: DataFrame) -> DataFrame:
         for col in ("_source", "_fields"):
-            df = ScanToDataFrame.expand_mapping_column(df, col)
+            df = AssignScanResult.expand_mapping_column(df, col)
 
         return df.drop(columns=["_index"], errors="ignore")
 
