@@ -92,7 +92,7 @@ class AssignScanResult[T: (DataFrame, Series, Index)](AssigningStep[T]):
         if columns is None:
             return df
 
-        cols = columns
+        cols = list(columns)
 
         if isinstance(self.column_as_index, str):
             cols.append(self.column_as_index)
