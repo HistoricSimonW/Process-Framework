@@ -88,24 +88,21 @@ class AssignScanResult[T: (DataFrame, Series, Index)](AssigningStep[T]):
         return df.join(expanded, how="left").drop(columns=[col])
 
     
-    def keep_required_columns(self, df: DataFrame, columns: list[str] | None) -> DataFrame:
-        if columns is None:
-            return df
-
-        cols = list(columns)
+    def keep_required_columns(self, df: DataFrame) -> DataFrame:
+        cols = set(df.columns) if self.keep_columns is None else set(self.keep_columns)
 
         if isinstance(self.column_as_index, str):
-            cols.append(self.column_as_index)
+            cols.add(self.column_as_index)
 
         if isinstance(self.column_as_index, list):
-            cols += self.column_as_index
+            cols.update(self.column_as_index)
 
         # Preserve requested order and include missing requested columns.
         for col in cols:
             if col not in df.columns:
                 df[col] = NA
 
-        return df[columns]
+        return df[list(cols)]
 
 
     @staticmethod
