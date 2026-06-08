@@ -66,7 +66,7 @@ class AssignScanResult[T: (DataFrame, Series, Index)](AssigningStep[T]):
                 continue
             df = self.expand_mapping_column(df, col)
                 
-        df = self.keep_required_columns(df, columns)
+        df = self.keep_required_columns(df)
 
         return df
 
