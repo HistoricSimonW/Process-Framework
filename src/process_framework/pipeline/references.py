@@ -1,15 +1,18 @@
 # stdlib
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Self
 from .composition.core import ContainerBase
 
-@dataclass
-class ReferenceGraphBase(ContainerBase, ABC):
+@dataclass(kw_only=True)
+class ReferencesBase(ContainerBase, ABC):
     """base class for reference containers holding pipeline state."""
+    ...
+
+
+class ReferencesDefinitionBase[TReferences:ReferencesBase](ABC):
+    """ Constructs and wires a concrete ReferencesBase instance. Implementations should return a fully initialized reference graph. """
     
     @classmethod
     @abstractmethod
-    def initialize(cls) -> Self:
-        """ construct a wired-up instance of `cls` """
+    def instantiate(cls) -> TReferences:
         ...

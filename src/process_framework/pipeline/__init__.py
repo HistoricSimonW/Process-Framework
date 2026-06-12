@@ -1,4 +1,4 @@
 from .clients import ClientsBase
-from .references import ReferenceGraphBase
+from .references import ReferencesBase, ReferencesDefinitionBase
 from .settings import SettingsBase
-from .pipeline import Pipeline, PipelineBuilderBase
+from .pipeline import Pipeline, PipelineDefinitionBase

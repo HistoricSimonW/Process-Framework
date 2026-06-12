@@ -3,7 +3,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Any, Self
 from pydantic import BaseModel, Field, field_validator
 from pathlib import Path
-from dotenv import load_dotenv
 
 def empty_str_to_none(v:str) -> str|None:
     """ treat an empty string as a None value
@@ -19,10 +18,11 @@ class CliMetadata(BaseModel):
     kwargs: dict[str, Any] = Field(default_factory=dict)
 
 
-def CliArg(*flags: str, **kwargs):
+def CliArg(*flags: str, default:Any=..., **kwargs:Any) -> Any:
     """mark a settings field as configurable from the cli."""
     meta = CliMetadata(flags=flags, kwargs=kwargs)
     return Field(
+        default=default,
         json_schema_extra={ # type:ignore
             "cli": meta.model_dump()
         }
@@ -69,7 +69,7 @@ class SettingsBase(BaseSettings):
             kwargs.setdefault("dest", name)
             kwargs.setdefault("default", None)
 
-            if "action" not in kwargs and field.annotation in (str, int, float):
+            if "action" not in kwargs and field.annotation in (str, int, float, Path):
                 kwargs.setdefault("type", field.annotation)
 
             parser.add_argument(*cli.flags, **kwargs)
