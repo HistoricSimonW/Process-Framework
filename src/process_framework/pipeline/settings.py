@@ -33,7 +33,8 @@ class SettingsBase(BaseSettings):
     """base pipeline settings model loadable from env files and optional cli arguments."""
     model_config = SettingsConfigDict(
         env_nested_delimiter="__",
-        case_sensitive=False
+        case_sensitive=False,
+        extra='ignore'
     )
 
     @field_validator("*", mode="before")

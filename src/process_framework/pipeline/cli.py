@@ -13,18 +13,23 @@
 #                                                       #
 # """"""""""""""""""""""""""""""""""""""""""""""""""""" #
 
-import logging
-import sys
-from logging.handlers import RotatingFileHandler
+from abc import ABC
+from dataclasses import dataclass
 from logging import Logger
-from process_framework.pipeline.pipeline import PipelineDefinitionBase, ClientsBase, ReferencesDefinitionBase
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Sequence
-from abc import ABC
 
+import logging
+import sys
 
-from process_framework.pipeline.settings import SettingsBase, CliArg
-from dataclasses import dataclass
+from process_framework.pipeline.pipeline import (
+    ClientsBase,
+    PipelineDefinitionBase,
+    ReferencesDefinitionBase,
+)
+from process_framework.pipeline.settings import CliArg, SettingsBase
+
 class EnvironmentSettings(SettingsBase):
     verbosity: int = CliArg("-v", action="count", default=0)
     log_console: bool = CliArg("--log-console", action="store_true", default=False)
