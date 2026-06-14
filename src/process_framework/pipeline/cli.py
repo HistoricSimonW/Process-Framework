@@ -25,7 +25,7 @@ from abc import ABC
 
 from process_framework.pipeline.settings import SettingsBase, CliArg
 from dataclasses import dataclass
-class CliSettings(SettingsBase):
+class EnvironmentSettings(SettingsBase):
     verbosity: int = CliArg("-v", action="count", default=0)
     log_console: bool = CliArg("--log-console", action="store_true", default=False)
     log_file: Path | None = CliArg("--log-file", default=None)
@@ -43,19 +43,19 @@ class CliSettings(SettingsBase):
         
 
 @dataclass(kw_only=True)
-class CliBase():
+class Runner():
     definition:type[PipelineDefinitionBase]
     settings_type:type[SettingsBase]
     clients_type:type[ClientsBase]
     references_type:type[ReferencesDefinitionBase]
 
-    cli_settings_type:type[CliSettings] = CliSettings
+    environment_settings:type[EnvironmentSettings] = EnvironmentSettings
 
     def main(self, argsv: Sequence[str] | None = None) -> int:
         if argsv is None:
             argsv = sys.argv[1:]
         
-        settings = self.cli_settings_type.from_environment(argsv)
+        settings = self.environment_settings.from_environment(argsv)
 
         logger = self.configure_logging(settings, None)
 
@@ -75,7 +75,7 @@ class CliBase():
         return 0
 
 
-    def configure_logging(self, settings:CliSettings, logger:Logger|None) -> Logger:
+    def configure_logging(self, settings:EnvironmentSettings, logger:Logger|None) -> Logger:
         # handle verbosity (-v => INFO, -vv => DEBUG)
 
         log_level = settings.get_log_level()

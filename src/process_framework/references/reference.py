@@ -5,12 +5,14 @@ from ..composition.core.logging import HasLogger
 import reprlib
 
 # one small, shared repr truncator
-_repr = reprlib.Repr()
-_repr.maxstring = 30
-_repr.maxother = 30
-_repr.maxlist = 3
-_repr.maxtuple = 3
-_repr.maxdict = 3
+_repr = reprlib.Repr(
+    maxstring = 30, 
+    maxother = 30,
+    maxlist=3,
+    maxtuple = 3, 
+    maxdict = 3
+)
+
 
 @dataclass(slots=True)
 class Reference[T](IGettable[T], ISettable[T], ITyped[T], HasLogger):

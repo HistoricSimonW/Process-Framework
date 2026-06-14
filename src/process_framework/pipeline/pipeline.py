@@ -19,16 +19,16 @@ from dataclasses import dataclass
 # first-party (process_framework / process)
 from ..steps import Step
 from .clients import ClientsBase
-from .references import ReferencesDefinitionBase
+from .references import ReferencesBase, ReferencesDefinitionBase
 from .settings import SettingsBase
 from ..exceptions import EarlyEscape
 from ..composition.core import HasLogger
 
 @dataclass(kw_only=True)
 class PipelineDefinitionBase[
-    TSettings:SettingsBase,
-    TReferences:ReferencesDefinitionBase,
-    TClients:ClientsBase
+        TSettings:SettingsBase,
+        TReferences:ReferencesBase,
+        TClients:ClientsBase
     ](ABC):
     """Construct a pipeline from settings, references, and clients."""
     settings:TSettings
@@ -38,7 +38,7 @@ class PipelineDefinitionBase[
     @classmethod
     def from_environment(cls, 
                          t_settings:type[TSettings], 
-                         t_references:type[TReferences], 
+                         t_references:type[ReferencesDefinitionBase[TReferences]], 
                          t_clients:type[TClients], 
                          argsv=None) -> Self:
         """Initialize a builder from environment and CLI state."""
@@ -68,7 +68,7 @@ class PipelineDefinitionBase[
     @classmethod
     def instantiate_pipeline_from_environment(cls,
                                         t_settings:type[TSettings], 
-                                        t_references:type[TReferences], 
+                                        t_references:type[ReferencesDefinitionBase[TReferences]], 
                                         t_clients:type[TClients], 
                                         argsv=None) -> 'Pipeline':
         """Initialize a pipeline from environment and CLI state."""
