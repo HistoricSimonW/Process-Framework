@@ -19,7 +19,7 @@ from dataclasses import dataclass
 # first-party (process_framework / process)
 from ..steps import Step
 from .clients import ClientsBase
-from .references import ReferencesBase, ReferencesDefinitionBase
+from .references import ReferencesBase
 from .settings import SettingsBase
 from ..exceptions import EarlyEscape
 from ..composition.core import HasLogger
@@ -30,21 +30,35 @@ class PipelineDefinitionBase[
         TReferences:ReferencesBase,
         TClients:ClientsBase
     ](ABC):
-    """Construct a pipeline from settings, references, and clients."""
+    """Construct a pipeline from settings, references, and clients.\n
+        \tTSettings\n
+        \tTReferences\n
+        \tTClients"""
     settings:TSettings
     references:TReferences
     clients:TClients
     
     @classmethod
-    def from_environment(cls, 
-                         t_settings:type[TSettings], 
-                         t_references:type[ReferencesDefinitionBase[TReferences]], 
-                         t_clients:type[TClients], 
-                         argsv=None) -> Self:
+    @abstractmethod
+    def get_settings_type(cls) -> type[TSettings]:
+        ...
+
+    @classmethod
+    @abstractmethod
+    def initialize_references(cls) -> TReferences:
+        ...
+
+    @classmethod
+    @abstractmethod
+    def get_clients_type(cls) -> type[TClients]:
+        ...
+
+    @classmethod
+    def from_environment(cls, argsv=None) -> Self:
         """Initialize a builder from environment and CLI state."""
-        settings = t_settings.from_environment(argsv)
-        clients = t_clients.initialize(settings=settings)
-        references = t_references.instantiate()
+        settings = cls.get_settings_type().from_environment(argsv)
+        clients = cls.get_clients_type().initialize(settings=settings)
+        references = cls.initialize_references()
 
         return cls(
             settings=settings,
@@ -66,16 +80,12 @@ class PipelineDefinitionBase[
     
 
     @classmethod
-    def instantiate_pipeline_from_environment(cls,
-                                        t_settings:type[TSettings], 
-                                        t_references:type[ReferencesDefinitionBase[TReferences]], 
-                                        t_clients:type[TClients], 
-                                        argsv=None) -> 'Pipeline':
+    def instantiate_pipeline_from_environment(cls, argsv=None) -> 'Pipeline':
         """Initialize a pipeline from environment and CLI state."""
-        definition = cls.from_environment(t_settings, t_references, t_clients, argsv)
+        definition = cls.from_environment(argsv)
         return definition.instantiate_pipeline()
-        
-        
+
+
 @dataclass
 class Pipeline(HasLogger):
     """Execute an ordered collection of steps."""
@@ -105,31 +115,3 @@ class Pipeline(HasLogger):
     def log_steps(self) -> None:
         for i, step in enumerate(self.steps):
             self._info(f'{i}\t{type(step).__name__}')
-
-
-############# Example implementation ###################################################################
-
-# class ExampleSettings(SettingsBase):
-#     ...
-
-
-# class ExampleReferences(ReferenceGraphBase):
-#     ...
-
-
-# class ExampleClients(ClientsBase):
-#     ...
-
-
-# class ExampleDefinition(PipelineDefinition[
-#         ExampleSettings, 
-#         ExampleReferences, 
-#         ExampleClients
-#     ]):
-#     def build_steps(self) -> list[Step]:
-#         return []
-    
-
-# ExampleDefinition.from_environment(ExampleSettings, ExampleReferences, ExampleClients).instantiate_pipeline()
-
-########################################################################################################

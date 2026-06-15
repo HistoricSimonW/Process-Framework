@@ -13,7 +13,6 @@
 #                                                       #
 # """"""""""""""""""""""""""""""""""""""""""""""""""""" #
 
-from abc import ABC
 from dataclasses import dataclass
 from logging import Logger
 from logging.handlers import RotatingFileHandler
@@ -23,11 +22,7 @@ from typing import Sequence
 import logging
 import sys
 
-from process_framework.pipeline.pipeline import (
-    ClientsBase,
-    PipelineDefinitionBase,
-    ReferencesDefinitionBase,
-)
+from process_framework.pipeline import PipelineDefinitionBase
 from process_framework.pipeline.settings import CliArg, SettingsBase
 
 class EnvironmentSettings(SettingsBase):
@@ -50,10 +45,6 @@ class EnvironmentSettings(SettingsBase):
 @dataclass(kw_only=True)
 class Runner():
     definition:type[PipelineDefinitionBase]
-    settings_type:type[SettingsBase]
-    clients_type:type[ClientsBase]
-    references_type:type[ReferencesDefinitionBase]
-
     environment_settings:type[EnvironmentSettings] = EnvironmentSettings
 
     def main(self, argsv: Sequence[str] | None = None) -> int:
@@ -65,9 +56,6 @@ class Runner():
         logger = self.configure_logging(settings, None)
 
         definition = self.definition.from_environment(
-            t_settings=self.settings_type,
-            t_references=self.references_type,
-            t_clients=self.clients_type,
             argsv=argsv
         )
 
