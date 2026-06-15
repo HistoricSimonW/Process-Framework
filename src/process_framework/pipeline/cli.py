@@ -26,6 +26,7 @@ from process_framework.pipeline import PipelineDefinitionBase
 from process_framework.pipeline.settings import CliArg, SettingsBase
 
 class EnvironmentSettings(SettingsBase):
+    """Settings for the local pipeline runner."""
     verbosity: int = CliArg("-v", action="count", default=0)
     log_console: bool = CliArg("--log-console", action="store_true", default=False)
     log_file: Path | None = CliArg("--log-file", default=None)
@@ -33,8 +34,9 @@ class EnvironmentSettings(SettingsBase):
     log_backup_count: int = CliArg("--log-backup-count", default=10, type=int)
 
     def get_log_level(self) -> int:
+        """Return the logging level implied by the configured verbosity."""
         if self.verbosity <= 0:
-            return logging.WARN
+            return logging.WARNING
         
         if self.verbosity == 1:
             return logging.INFO
@@ -44,16 +46,18 @@ class EnvironmentSettings(SettingsBase):
 
 @dataclass(kw_only=True)
 class Runner():
+    """Run a pipeline definition from environment and CLI settings."""
     definition:type[PipelineDefinitionBase]
     environment_settings:type[EnvironmentSettings] = EnvironmentSettings
 
-    def main(self, argsv: Sequence[str] | None = None) -> int:
+    def run(self, argsv: Sequence[str] | None = None) -> int:
+        """Configure logging, instantiate the pipeline, and execute it."""
         if argsv is None:
             argsv = sys.argv[1:]
         
         settings = self.environment_settings.from_environment(argsv)
 
-        logger = self.configure_logging(settings, None)
+        self.configure_logging(settings, None)
 
         definition = self.definition.from_environment(
             argsv=argsv
@@ -69,8 +73,10 @@ class Runner():
 
 
     def configure_logging(self, settings:EnvironmentSettings, logger:Logger|None) -> Logger:
+        """Configure root logging for console and optional rotating file output."""
         # handle verbosity (-v => INFO, -vv => DEBUG)
-
+        # I could use Elasticsearch for logging too...
+        
         log_level = settings.get_log_level()
 
         logger = logger or logging.getLogger()
@@ -88,7 +94,8 @@ class Runner():
             ch.setFormatter(format)
             logger.addHandler(ch)
         
-        if (log_file := settings.log_file) and isinstance(log_file, Path):
+        if settings.log_file:
+            log_file = Path(settings.log_file)
             log_file.parent.mkdir(parents=True, exist_ok=True)
             fh = RotatingFileHandler(
                 filename=str(log_file),
