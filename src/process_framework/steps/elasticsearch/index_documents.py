@@ -1,16 +1,39 @@
-from process_framework import Step, Reference
-from pandas import Series
-from elasticsearch.client import Elasticsearch
-from elasticsearch.helpers import bulk, BulkIndexError
-from typing import Any, Tuple
-from logging import info
-from typing import NamedTuple, Iterable
+from contextlib import contextmanager
 from dataclasses import dataclass
-from process_framework.steps import Step
-from process_framework.steps.composition.core import HasInput, HasOptionalOutput
-from process_framework.steps.composition.elasticsearch.core import HasElasticsearch, HasElasticsearchIndex
-from process_framework.steps.composition.elasticsearch.document import DocumentBase
+from typing import Any, Iterable
+
+import logging
+
+from elasticsearch.helpers import BulkIndexError, bulk
+
+from process_framework import Step
+from process_framework.steps.composition.core import (
+    HasInput,
+    HasOptionalOutput,
+)
 from process_framework.steps.composition.elasticsearch.actions import IndexAction
+from process_framework.steps.composition.elasticsearch.core import (
+    HasElasticsearch,
+    HasElasticsearchIndex,
+)
+from process_framework.steps.composition.elasticsearch.document import DocumentBase
+
+
+@contextmanager
+def suppress_logging(names: Iterable[str], level: int = logging.WARNING):
+    """ a context manager to temporarily suppress loggers identified by names """
+    loggers = [logging.getLogger(name) for name in names]
+    previous = [(logger, logger.level, logger.disabled) for logger in loggers]
+
+    try:
+        for logger in loggers:
+            logger.setLevel(level)
+        yield
+    finally:
+        for logger, old_level, old_disabled in previous:
+            logger.setLevel(old_level)
+            logger.disabled = old_disabled
+
 
 # https://elasticsearch-py.readthedocs.io/en/v8.2.2/helpers.html
 @dataclass(kw_only=True)
@@ -50,13 +73,20 @@ class IndexDocuments(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[
         kwargs = self.get_bulk_kwargs()
 
         try:
-            result = bulk(
-                self.elasticsearch,
-                actions=IndexAction.from_documents(docs, self.index, self.pipeline),
-                index=self.index,
-                pipeline=self.pipeline,
-                **kwargs
-            )
+            with suppress_logging(
+                    [
+                        "elastic_transport.transport",
+                        "urllib3.connectionpool",
+                    ],
+                    level=logging.WARNING,
+            ):
+                result = bulk(
+                    self.elasticsearch,
+                    actions=IndexAction.from_documents(docs, self.index, self.pipeline),
+                    index=self.index,
+                    pipeline=self.pipeline,
+                    **kwargs
+                )
 
         except BulkIndexError as e:
             for error in e.errors:
