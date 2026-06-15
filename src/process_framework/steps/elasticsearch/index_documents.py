@@ -1,7 +1,7 @@
 from process_framework import Step, Reference
 from pandas import Series
 from elasticsearch.client import Elasticsearch
-from elasticsearch.helpers import bulk
+from elasticsearch.helpers import bulk, BulkIndexError
 from typing import Any, Tuple
 from logging import info
 from typing import NamedTuple, Iterable
@@ -48,13 +48,19 @@ class IndexDocuments(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[
         docs = self.input_.get_value()
         kwargs = self.get_bulk_kwargs()
 
-        result = bulk(
-            self.elasticsearch,
-            actions=DocumentBase.gen_bulk_index_actions(self.index, docs),
-            index=self.index,
-            pipeline=self.pipeline,
-            **kwargs
-        )
+        try:
+            result = bulk(
+                self.elasticsearch,
+                actions=DocumentBase.gen_bulk_index_actions(self.index, docs),
+                index=self.index,
+                pipeline=self.pipeline,
+                **kwargs
+            )
+
+        except BulkIndexError as e:
+            for error in e.errors:
+                self._error(f'{error}')
+            raise e
 
         if self.output_ is not None:
             self.output_.set_value(result)
