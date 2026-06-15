@@ -1,52 +1,63 @@
-from .step import AssigningStep
-from .composition.core import StepMixin
-from dataclasses import field
-from pathlib import Path
-from abc import ABC, abstractmethod
-import json
-from pandas import DataFrame
-import pandas as pd
-from typing import Any, Callable
-from io import TextIOWrapper
-
-from .step import TransformingStep
-from typing import Iterable
-from ..references.composition.core import IGettable
 from dataclasses import dataclass
+from typing import Mapping, Final, Callable, Iterable
 
-# sentinel throw object
-_THROW = object() 
+from ..references.composition.core import IGettable
+from .composition.core import StepMixin
+from .step import AssigningStep, TransformingStep
 
-@dataclass
-class HasMapper[TIn, TOut](StepMixin):
-    mapper:dict[TIn, TOut] | IGettable[dict[TIn, TOut]]
-    default:TOut | object = _THROW
+class _ThrowType:
+    """ a sentinel class indicating "if this is the default, throw on a missing key" """
+    pass
 
-    def get_mapper(self) -> dict[TIn, TOut]:
-        if isinstance(self.mapper, dict):
-            return self.mapper
-        if isinstance(self.mapper, IGettable):
-            return self.mapper.get_value()
-        raise ValueError()
 
+_THROW: Final = _ThrowType() # this should not be reassigned
 
 @dataclass
-class MapIter[TIn, TOut](HasMapper, TransformingStep[Iterable[TIn], Iterable[TOut]]):
+class HasMapping[TIn, TOut](StepMixin):
+    """Mixin for steps that map input values through a dictionary-like lookup."""
+    mapping:Mapping[TIn, TOut] | IGettable[Mapping[TIn, TOut]]
+    default:TOut | _ThrowType = _THROW
+
+    def get_mapping(self) -> Mapping[TIn, TOut]:
+        value = self.mapping
+        
+        if isinstance(value, IGettable):
+            value = value.get_value()
+        
+        if not isinstance(value, Mapping):
+            raise TypeError(f"Expected Mapping, got {type(value).__name__}")
+        
+        return value
+    
+
+    def get_lookup_strategy(self, mapping:Mapping[TIn, TOut]) -> Callable[[TIn], TOut]:
+        """ get a lookup strategy; throwing on missing keys if `default` is `_ThrowType` else `.get`ing with a default """
+        default = self.default
+
+        if isinstance(default, _ThrowType):
+            # if `default` is the _ThrowType sentinel, use __getitem__ which will throw on a missing key
+            return mapping.__getitem__
+        else:
+            # else `get` the value from the mapping, returning `default` on a missing key
+            return lambda key: mapping.get(key, default)
+
+
+
+@dataclass
+class MapIterable[TIn, TOut](HasMapping[TIn, TOut], TransformingStep[Iterable[TIn], Iterable[TOut]]):
+    """Map each item in an iterable through a configured mapping."""
 
     def transform_value(self, input_: Iterable[TIn]) -> Iterable[TOut]:
-        mapper = self.get_mapper()
+        mapping = self.get_mapping()
+        lookup:Callable[[TIn], TOut] = self.get_lookup_strategy(mapping)
 
-        getter: Callable[[TIn], TOut] = lambda g: mapper.get(g, self.default)
-
-        if self.default is _THROW:
-            getter = lambda g: mapper[g]
-
-        for in_ in input_:
-            yield getter(in_)
+        for value in input_:
+            yield lookup(value)
 
 
 @dataclass
-class ConcatIters[T](AssigningStep[Iterable[T]]):
+class ChainIterables[T](AssigningStep[Iterable[T]]):
+    """ chain the values in a list of iterables or references to iterables """
     iterables:list[Iterable[T]|IGettable[Iterable[T]]]
 
     def generate_value(self) -> Iterable[T] | None:
