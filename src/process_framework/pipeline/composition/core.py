@@ -14,6 +14,11 @@ class CrudArgs(BaseModel):
     deletions:Annotated[bool, CliArg('--deletions', '-d', action=BooleanOptionalAction)]
 
 
+class LimitArgs(BaseModel):
+    """ mixin for a limit arg """
+    limit:int|None = CliArg('--limit', '-l', default=None)
+
+
 @dataclass
 class ContainerBase(ABC):
     """base class for containers requiring all fields to be assigned."""
