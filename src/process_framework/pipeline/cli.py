@@ -27,7 +27,7 @@ from process_framework.pipeline.settings import CliArg, SettingsBase
 
 class EnvironmentSettings(SettingsBase):
     """Settings for the local pipeline runner."""
-    verbosity: int = CliArg("-v", action="count", default=0)
+    verbosity: int = CliArg("-v", action="count", default=1)
     log_console: bool = CliArg("--log-console", action="store_true", default=False)
     log_file: Path | None = CliArg("--log-file", default=None)
     log_max_bytes: int = CliArg("--log-max-bytes", default=10_485_760, type=int)
