@@ -1,4 +1,5 @@
 from ..composition.elasticsearch.document import DocumentBase
+from ..composition.elasticsearch.actions import IndexAction, UpdateAction, DeleteAction
 from .index_documents import IndexDocuments
 from .assign_scan_result import AssignScanResult
 from .delete_by_id import DeleteById

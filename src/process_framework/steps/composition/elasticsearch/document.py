@@ -2,14 +2,11 @@ from pydantic import BaseModel
 from typing import Any, Self, Iterable, ClassVar, Mapping
 from abc import ABC
 from pydantic import Field, computed_field, model_validator
-from process_framework.steps.composition.elasticsearch.actions import IndexAction, UpdateAction
 
 class DocumentBase(BaseModel, ABC):
-    """Base model for documents indexed into Elasticsearch."""
-    # if this is set, use its values as `_id``
-    id: Any|None = Field(default=None, alias="_id")     
-    # if this is set, use the field it identifies to get the value of `_id`
-    _id_field: ClassVar[str | None] = None              
+    """Base model for documents indexed to Elasticsearch."""
+    id: Any|None = Field(default=None, alias="_id") # if this is set, use its values as `_id``
+    _id_field: ClassVar[str | None] = None          # if this is set, use the field it identifies to get the value of `_id`
 
     @computed_field
     @property
@@ -27,29 +24,6 @@ class DocumentBase(BaseModel, ABC):
     def _dump(self) -> dict:
         """Dump the document for Elasticsearch operations."""
         return self.model_dump(by_alias=True, exclude_none=True)
-    
-
-    def get_index_action(self, index:str, pipeline:str|None=None) -> IndexAction:
-        """Build an index action for this document."""
-        dump = self._dump()
-        _id = dump.pop('_id')
-        return IndexAction(
-            _index=index,
-            _id=_id,
-            pipeline=pipeline,
-            _source=dump
-        )
-    
-
-    def get_update_action(self, index:str) -> UpdateAction:
-        """Build a partial update action for this document."""
-        dump = self._dump()
-        _id = dump.pop('_id')
-        return UpdateAction(
-            _index=index,
-            _id=_id,
-            doc=dump
-        )
     
 
     @model_validator(mode="after")
@@ -75,35 +49,6 @@ class DocumentBase(BaseModel, ABC):
         """Yield document instances from an iterable of records."""
         for record in records:
             yield cls.from_record(record)
-
-    
-    def _get_source(self, exclude_none:bool=True, **kwargs) -> dict:
-        """ get the json `source` of this doc, ready to be returned as part of an `index` or `bulk_index` action
-            this pops `id`, if it's part of the doc; it should be handled separately """
-        _source = self.model_dump(
-            mode='json',
-            exclude_none=exclude_none,
-            **kwargs
-        )
-        _source.pop('id', None) # remove `id` if it's present
-        return _source
-    
-
-    def get_bulk_index_action(self, index:str) -> dict:
-        """ get a dict that can be passed to the elasticsearch.helpers.bulk api """
-        return dict(
-            _index=index,
-            _op_type='index',
-            _id=self._id,
-            _source=self._get_source()
-        )
-    
-    
-    @staticmethod
-    def gen_bulk_index_actions[T:'DocumentBase'](index:str, documents: Iterable[T]) -> Iterable[dict]:
-        """ gennerate an Iterable of bulk index actions for an iterable of `Document`s """
-        for doc in documents:
-            yield doc.get_bulk_index_action(index)
 
 
 if __name__ == '__main__':

@@ -10,6 +10,7 @@ from process_framework.steps import Step
 from process_framework.steps.composition.core import HasInput, HasOptionalOutput
 from process_framework.steps.composition.elasticsearch.core import HasElasticsearch, HasElasticsearchIndex
 from process_framework.steps.composition.elasticsearch.document import DocumentBase
+from process_framework.steps.composition.elasticsearch.actions import IndexAction
 
 # https://elasticsearch-py.readthedocs.io/en/v8.2.2/helpers.html
 @dataclass(kw_only=True)
@@ -51,7 +52,7 @@ class IndexDocuments(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[
         try:
             result = bulk(
                 self.elasticsearch,
-                actions=DocumentBase.gen_bulk_index_actions(self.index, docs),
+                actions=IndexAction.from_documents(docs, self.index, self.pipeline),
                 index=self.index,
                 pipeline=self.pipeline,
                 **kwargs
