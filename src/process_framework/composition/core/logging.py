@@ -13,6 +13,11 @@ class HasLogger:
             message,
             *args,
         )
+
+    @classmethod
+    def _debug(cls, message:str, *args:Any) -> None:
+        """ log a `debug` message """
+        cls._log(logging.DEBUG, message, *args)
         
     @classmethod
     def _info(cls, message: str, *args: Any) -> None:

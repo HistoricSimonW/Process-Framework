@@ -1,117 +1,84 @@
-from ..step import Step
-from ...references import Reference
-from ...references.dataframe import ColumnReference, IndexReference
-from elasticsearch.client import Elasticsearch
-from typing import Sequence
+from process_framework import Step, IGettable, ISettable
 from elasticsearch import NotFoundError
-from logging import info
+from ..composition.elasticsearch.query import Query, MatchAll, ValuesQuery
+from ..composition.elasticsearch import HasElasticsearch
 from time import sleep
-from pandas import Index, Series
+from dataclasses import dataclass, field
+from typing import Any
+from collections.abc import Sequence
+from itertools import batched
 
 MAX_ALLOWABLE_TERMS = 65536
 
-# https://elasticsearch-py.readthedocs.io/en/v8.2.2/api.html?highlight=execute#elasticsearch.Elasticsearch.update_by_query
-class UpdateByQuery(Step):
-    """ perform an update-by-query operation on an index """
-    # TODO : build option to pass and do a query
-    def __init__(self, elasticsearch:Elasticsearch, index:str|Sequence[str], pipeline:str, 
-                 query:dict|None=None, _ids:list|Reference[list]|Reference[Series]|Reference[Index]|None=None,
-                 execute_without_query:bool=True, 
-                 _ids_as_terms_field:str|None=None,   # if a query isn't provided, or if _ids aren't specified, run the pipeline over the whole index
-                 *, await_task:bool=True, await_task_interval:float=1, await_task_timeout:int=120,
-                 update_by_query_kwargs:dict|None=None
-                 ) -> None:
-        self.elasticsearch = elasticsearch
-        self.index = index
-        self.pipeline = pipeline
+@dataclass(kw_only=True)
+class UpdateByQuery(HasElasticsearch, Step):
+    """ perform an update-by-query operation on an index\n
+     https://elasticsearch-py.readthedocs.io/en/v8.2.2/api.html?highlight=execute#elasticsearch.Elasticsearch.update_by_query """
+    index:str|Sequence[str]|IGettable[str]|IGettable[Sequence[str]]
+    pipeline:str
+    query:dict|Query=field(default_factory=MatchAll)
+    wait_for_completion:bool=True
+    task_id:ISettable[str]|None=None # optional output for an awaitable task
+    update_by_query_kwargs:dict[str, Any]=field(default_factory=dict)
+
+
+    def get_query(self) -> dict:
+        query = self.query
         
-        self.query=query
-        self._ids = _ids
-        self._ids_as_terms_field = _ids_as_terms_field
-        self.execute_without_query = execute_without_query
-
-        self.await_task = await_task
-        self.await_task_interval = await_task_interval
-        self.await_task_timeout = await_task_timeout
-
-        self.update_by_query_kwargs = update_by_query_kwargs or dict()
-
-
-    def get_ids(self) -> list|None:
-        """ handle _ids from list or Reference[list] or Reference[Series] or None to list or None """
-        _ids = self._ids
-        if _ids is None or isinstance(_ids, list):
-            return _ids
-
-        if isinstance(_ids, Reference) and _ids.is_instance_of(list):
-            value = _ids.get_value()
-            assert isinstance(value, list)# or value is None
-            return value
-
-        if (isinstance(_ids, Reference) and _ids.is_instance_of((Series, Index))) or isinstance(_ids, (ColumnReference, IndexReference)):
-            value = _ids.get_value()
-            if isinstance(value, (Series, Index)):
-                return value.to_list()
-            return None
-
-        raise Exception()
-
-
-    # TODO: Wrap this in a `ReferableQuery` class that constructs queries around `Reference`s
-    def get_query(self) -> dict|None:
-        if isinstance(self.query, dict):
-            return self.query
+        if query is None:
+            return MatchAll().get_query()
         
-        if self._ids is None or (isinstance(self._ids, Reference) and not self._ids.has_value()):
-            return None
+        if isinstance(query, dict):
+            return query
         
-        _ids = self.get_ids()
+        if isinstance(query, ValuesQuery) and len(query.get_values()) >= MAX_ALLOWABLE_TERMS:
+            self._warn(f'length of query values > {MAX_ALLOWABLE_TERMS}, returning match_all')
+            return MatchAll().get_query()
+        
+        return query.get_query()
+    
+    
+    def get_index(self) -> str|Sequence:
+        index = self.index
+        if isinstance(index, IGettable):
+            index = index.get_value()
+        return index
+    
 
-        if (_ids is not None) and len(_ids) > MAX_ALLOWABLE_TERMS: # the max allowable `terms` is 65536:
-            info(f"Length of `_ids` exceeds Elastic's max allowable limit of {MAX_ALLOWABLE_TERMS}, returning a `None` query")
-            return None
-        
-        return {'terms':{self._ids_as_terms_field:_ids}} if self._ids_as_terms_field else {'ids':{'values':_ids}}
-        
-        
     def do(self):
-        query = self.get_query()
 
-        if query is None and not self.execute_without_query:
-            info('`get_query` returned a `None` query; were no _ids provided? returning early')
-            return 
-        
+        index = self.get_index()
+
         response = self.elasticsearch.update_by_query(
-            index=self.index,
+            index=index,
             pipeline=self.pipeline,
-            wait_for_completion=False,
-            query=query,
+            wait_for_completion=self.wait_for_completion,
+            query=self.get_query(),
             **self.update_by_query_kwargs
         )
 
-        info(f'performing update-by-query {self.pipeline}:{self.index}:({response})')
+        self._info(f'performing update-by-query {self.pipeline}:{index}:({response})')
 
-        if not self.await_task:
-            return None
+        if self.wait_for_completion:
+            # we've already waited
+            return
         
-        task = response.body['task']
+        # we know we're not in the wait_for_completion branch
+        task_id = response.body['task']
 
-        # for 0 .. await_task_timeout, try to get the task
-        #   if the task exists, the task is running
-        #   if the task is not found, it's finished
-        for _ in range(self.await_task_timeout):
-            try:
-                r = self.elasticsearch.tasks.get(task_id=task)
-                if r.body.get('completed'):
-                    info(f'{r.body}')
-                    break
-            except NotFoundError:
-                break
-            sleep(self.await_task_interval)
-                
-        info(f'performed update-by-query {self.pipeline}:{self.index}')
+        if self.task_id is not None:
+            self.task_id.set_value(task_id)
+        else:
+            self._warn(f"`wait_for_completion = False` but `task_id` output is not set; task is still running: {task_id}")
+        
+        return
 
+        
     def preflight(self):
-        assert self.elasticsearch.info()
-        assert self.elasticsearch.indices.exists(index=self.index)
+                
+        if isinstance(self.index, (str, Sequence)):
+            assert self.elasticsearch.indices.exists(index=self.index)
+        elif isinstance(self.index, IGettable):
+            self._warn(f'`index` is a reference set at runtime')
+
         assert self.pipeline in self.elasticsearch.ingest.get_pipeline(id=self.pipeline)
