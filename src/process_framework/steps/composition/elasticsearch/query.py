@@ -38,7 +38,7 @@ class Ids(ValuesQuery):
     """Match documents by Elasticsearch document id."""
     def get_query(self) -> dict:
         return {
-            'ids':self.get_values()
+            'ids':{'values':self.get_values()}
         }
 
 @dataclass(kw_only=True)
