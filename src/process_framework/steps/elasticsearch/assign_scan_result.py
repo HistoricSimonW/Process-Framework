@@ -7,6 +7,7 @@ from elasticsearch.helpers import scan
 from pandas import DataFrame, Index, Series, NA
 
 from process_framework import AssigningStep
+from process_framework.context_managers.logging import suppress_logging
 
 
 DEFAULT_FILTER_PATH = "index,took,hits.hits._id,hits.hits._source,_scroll_id,_shards"
@@ -162,8 +163,12 @@ class AssignScanResult[T: (DataFrame, Series, Index)](AssigningStep[T]):
 
 
     def generate_value(self) -> T:
-        hits = self.scan()
-        df = self.hits_to_dataframe(hits, columns=self.keep_columns, limit=self.limit)
+        with suppress_logging((
+            "elastic_transport.transport",
+            "urllib3.connectionpool",
+        )):
+            hits = self.scan()
+            df = self.hits_to_dataframe(hits, columns=self.keep_columns, limit=self.limit)
         return self.transform_result(df)
 
 
