@@ -22,11 +22,11 @@ class ReindexArgBase(BaseModel, ABC):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     
     
-class ReindexSourceArg(ReindexArgBase):
+class ReindexSource(ReindexArgBase):
     """Source configuration for a reindex request."""
     query:Query|dict[str, Any]|None
-    size:int
-    sort:str
+    size:int|None=None
+    sort:str|None=None
     
     def get_args(self) -> dict[str, Any]:
         args = self.model_dump(exclude_none=True, exclude={'index'})
@@ -36,12 +36,12 @@ class ReindexSourceArg(ReindexArgBase):
         return args
     
 
-class ReindexDestArg(ReindexArgBase):
+class ReindexDest(ReindexArgBase):
     """Destination configuration for a reindex request."""
-    op_type:str
-    pipeline:str
-    routing:str
-    version_type:str
+    op_type:str|None=None
+    pipeline:str|None=None
+    routing:str|None=None
+    version_type:str|None=None
     
     def get_args(self) -> dict[str, Any]:
         args = self.model_dump(exclude_none=True, exclude={'index'})
@@ -50,10 +50,10 @@ class ReindexDestArg(ReindexArgBase):
     
 
 @dataclass(kw_only=True)
-class Reindex(HasElasticsearchSourceIndex, HasElasticsearchTargetIndex, HasElasticsearch, Step):
+class Reindex(HasElasticsearch, Step):
     """Execute an Elasticsearch reindex operation."""
-    source:ReindexSourceArg
-    dest:ReindexDestArg
+    source:ReindexSource
+    dest:ReindexDest
     conflicts:str|None='proceed'
     max_docs:int|None=None
     refresh:bool=False
