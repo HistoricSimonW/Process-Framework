@@ -71,7 +71,7 @@ class IndexDocuments(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[
     def do(self):
         docs = self.input_.get_value()
         kwargs = self.get_bulk_kwargs()
-
+        self._info(f"Indexing documents into {self.index} with pipeline={self.pipeline!r}")
         try:
             with suppress_logging(
                     [
@@ -82,7 +82,7 @@ class IndexDocuments(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[
             ):
                 result = bulk(
                     self.elasticsearch,
-                    actions=IndexAction.from_documents(docs, self.index, self.pipeline),
+                    actions=IndexAction.from_documents(docs, self.index, None),
                     index=self.index,
                     pipeline=self.pipeline,
                     **kwargs

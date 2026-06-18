@@ -18,7 +18,7 @@ class ValuesQuery(Query, ABC):
     values:IGettable[Sequence]|Sequence
 
     def get_values(self) -> list:
-        values = self.get_values()
+        values = self.values
 
         if isinstance(values, IGettable):
             values = values.get_value()
