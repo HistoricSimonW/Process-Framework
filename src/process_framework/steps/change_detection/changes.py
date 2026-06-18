@@ -10,6 +10,7 @@ class HasLocalAndRemote[T]:
     local:IGettable[T]
     remote:IGettable[T]
 
+
 @dataclass(kw_only=True)
 class DetectAdditions(HasLocalAndRemote[Index], AssigningStep[Index]):
     """ detect items in Local that are not in Remote """
@@ -18,7 +19,10 @@ class DetectAdditions(HasLocalAndRemote[Index], AssigningStep[Index]):
         remote = self.remote.get_value()
         
         # _id in local, not in remote
-        return local.get_level_values(0).difference(remote.get_level_values(0))
+        changes = local.get_level_values(0).difference(remote.get_level_values(0))
+        self._info(f'detected {len(changes)} additions')
+        self._debug(f'{changes}')
+        return changes
     
 
 @dataclass(kw_only=True)
@@ -29,8 +33,11 @@ class DetectUpdates(HasLocalAndRemote[Index], AssigningStep[Index]):
         remote = self.remote.get_value()
         
         # _id in local, not in remote
-        return local.difference(remote).get_level_values(0)
-    
+        changes = local.difference(remote).get_level_values(0)
+        self._info(f'detected {len(changes)} updates')
+        self._debug(f'{changes}')
+        return changes
+
 
 @dataclass(kw_only=True)
 class DetectDeletions(HasLocalAndRemote[Index], AssigningStep[Index]):
@@ -40,4 +47,7 @@ class DetectDeletions(HasLocalAndRemote[Index], AssigningStep[Index]):
         remote = self.remote.get_value()
                 
         # _id in local, not in remote
-        return remote.get_level_values(0).difference(local.get_level_values(0))
+        changes = remote.get_level_values(0).difference(local.get_level_values(0))
+        self._info(f'detected {len(changes)} deletions')
+        self._debug(f'{changes}')
+        return changes
