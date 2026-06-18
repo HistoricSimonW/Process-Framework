@@ -35,20 +35,19 @@ class IndexAction(BulkAction):
         return OpType.INDEX
 
     @staticmethod
-    def from_document(document:DocumentBase, index:str, pipeline:str|None) -> 'IndexAction':
+    def from_document(document:DocumentBase, index:str) -> 'IndexAction':
         source = document._dump()
         return IndexAction(
             _index=index,
             _id=source.pop('_id'),  # required by bulk action; raise if absent
-            pipeline=pipeline,
             _source=source
         )
     
     
     @staticmethod
-    def from_documents(documents: Iterable[DocumentBase], index:str, pipeline:str|None) -> Iterable['dict']:
+    def from_documents(documents: Iterable[DocumentBase], index:str) -> Iterable['dict']:
         for doc in documents:
-            yield IndexAction.from_document(doc, index, pipeline).model_dump(exclude_none=True)
+            yield IndexAction.from_document(doc, index).model_dump(exclude_none=True, by_alias=True)
             
     
 class UpdateAction(BulkAction):

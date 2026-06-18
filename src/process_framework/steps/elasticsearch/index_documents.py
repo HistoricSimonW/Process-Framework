@@ -82,8 +82,7 @@ class IndexDocuments(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[
             ):
                 result = bulk(
                     self.elasticsearch,
-                    actions=IndexAction.from_documents(docs, self.index, None),
-                    index=self.index,
+                    actions=IndexAction.from_documents(docs, self.index),
                     pipeline=self.pipeline,
                     **kwargs
                 )
