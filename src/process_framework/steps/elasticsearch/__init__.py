@@ -7,3 +7,4 @@ from .execute_enrich_policy import ExecutePolicy
 from .update_by_query import UpdateByQuery
 from .await_task import AwaitTask
 from ..composition.elasticsearch.query import Query, ValuesQuery, Ids, Terms, MatchAll
+from .reindex import Reindex, ReindexDestArg, ReindexSourceArg
