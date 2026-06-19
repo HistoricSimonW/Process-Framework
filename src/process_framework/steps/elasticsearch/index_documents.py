@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Iterable
+from typing import Any, Iterable, Callable
 
 import logging
 
@@ -40,7 +40,9 @@ class IndexDocuments(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[
     chunk_size: int = 500
     max_chunk_bytes: int = 104_857_600
     bulk_kwargs: dict[str, Any] | None = None
-        
+    
+    log_progress_predicate: Callable[[int, int, list], bool] = lambda seen, indexed, errors: seen > 0 and seen % 1000 == 0
+    
     def get_bulk_kwargs(self) -> dict:
         
         kwargs = self.bulk_kwargs or dict()
@@ -76,17 +78,19 @@ class IndexDocuments(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[
                     ],
                     level=logging.WARNING,
             ):
-                for ok, item in streaming_bulk(
+                for seen,  (ok, item) in enumerate(streaming_bulk(
                     client=self.elasticsearch,
                     actions=actions,
                     pipeline=self.pipeline,
                     **kwargs
-                ):
+                )):
+                    if self.log_progress_predicate(seen, indexed, errors):
+                        self._info(f'{seen} : indexed:{indexed}, errors:{errors}')
                     if ok:
                         indexed += 1
                     else:
                         errors.append(item)
-                        self._error(str(item))
+                        self._error(f'{seen} : {item}')
 
         except BulkIndexError as e:
             for error in e.errors:
@@ -97,6 +101,8 @@ class IndexDocuments(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[
             'indexed':indexed,
             'errors':errors
         }
+        
+        self._info(f'indexing completed with result: {result}')
         
         if self.output_ is not None:
             self.output_.set_value(result)
