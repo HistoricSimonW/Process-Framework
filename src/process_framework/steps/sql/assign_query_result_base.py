@@ -69,4 +69,5 @@ class GetSqlQueryResultBase[T:(DataFrame, Series, Index)](ProvidesQueryResults, 
     def generate_value(self) -> T | None:
         query = self.get_modified_query(self)
         result = self.get_query_result(query)
+        self._info(f'got {len(result)} records as a {type(result).__name__}')
         return self.transform_result(result)

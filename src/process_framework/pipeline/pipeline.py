@@ -57,6 +57,11 @@ class PipelineDefinitionBase[
     def from_environment(cls, argsv=None) -> Self:
         """Initialize a builder from environment and CLI state."""
         settings = cls.get_settings_type().from_environment(argsv)
+        return cls.from_settings(settings)
+    
+    
+    @classmethod
+    def from_settings(cls, settings:TSettings) -> Self:
         clients = cls.get_clients_type().initialize(settings=settings)
         references = cls.initialize_references()
 
@@ -65,7 +70,7 @@ class PipelineDefinitionBase[
             references=references,
             clients=clients
         )
-    
+        
 
     @abstractmethod
     def instantiate_steps(self) -> list[Step]:
@@ -90,14 +95,21 @@ class PipelineDefinitionBase[
 class Pipeline(HasLogger):
     """Execute an ordered collection of steps."""
     steps:list[Step]
-         
+    _preflight_complete:bool=False
+    
     def preflight(self) -> None:
         """Run preflight checks for all steps."""
         for step in self.steps:
             step.preflight()
+        self._preflight_complete = True
+
 
     def do(self) -> None:
         """Execute pipeline steps in sequence."""
+        if not self._preflight_complete:
+            self._warn(f'`do` invoked before `preflight`, performing preflight')
+            self.preflight()
+            
         self._info(f"Pipeline started")
         for step in self.steps:
             self._info(type(step).__name__)
@@ -112,6 +124,23 @@ class Pipeline(HasLogger):
             
         self._info(f"Pipeline completed")
 
+
     def log_steps(self) -> None:
+        """ Log the steps in the pipeline """
         for i, step in enumerate(self.steps):
             self._info(f'{i}\t{type(step).__name__}')
+            
+            
+    def select_steps[T:Step](self, type_:type[T]) -> list[T]:
+        """Return all steps assignable to the privided type."""
+        return [t for t in self.steps if isinstance(t, type_)]
+    
+    
+    def select_step[T:Step](self, type_:type[T]) -> T:
+        """Return the unique step assignable to the given type."""
+        steps = self.select_steps(type_)
+        if len(steps) != 1:
+            raise ValueError(
+                f"Expected exactly one {type_.__name__} step, found {len(steps)}"
+            )
+        return steps[0]
