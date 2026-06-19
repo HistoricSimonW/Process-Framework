@@ -6,6 +6,8 @@ from time import sleep
 from dataclasses import dataclass
 import tenacity
 from elasticsearch import ConnectionError, ConnectionTimeout
+from process_framework.context_managers.logging import suppress_logging
+import logging
 
 @dataclass(kw_only=True)
 class AwaitTask(HasElasticsearch, Step):
@@ -38,22 +40,26 @@ class AwaitTask(HasElasticsearch, Step):
         elapsed = 0
         interval = self.interval
 
-        while True:
-            try:
-                response = self.get_task()
-                
-                self._debug(f'{elapsed}: {response.body}')
+        with suppress_logging(
+            ["elastic_transport.transport", "urllib3.connectionpool",],
+            level=logging.WARNING,
+        ):
+            while True:
+                try:
+                    response = self.get_task()
+                    
+                    self._debug(f'{elapsed}: {response.body}')
 
-                if response.body.get('completed'):
-                    self._info(f'{elapsed}: {response.body}')
+                    if response.body.get('completed'):
+                        self._info(f'{elapsed}: {response.body}')
+                        return
+                    
+                except NotFoundError:
+                    self._info(f"Task not found; assuming complete: {task_id}")
                     return
                 
-            except NotFoundError:
-                self._info(f"Task not found; assuming complete: {task_id}")
-                return
-            
-            sleep(interval)
-            elapsed += interval
-            
-            if self.has_timed_out(elapsed):
-                raise TimeoutError(f"Timed out waiting for Elasticsearch task: {task_id}")
+                sleep(interval)
+                elapsed += interval
+                
+                if self.has_timed_out(elapsed):
+                    raise TimeoutError(f"Timed out waiting for Elasticsearch task: {task_id}")
