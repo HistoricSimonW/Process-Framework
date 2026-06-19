@@ -8,6 +8,8 @@ import tenacity
 from elasticsearch import ConnectionError, ConnectionTimeout
 from process_framework.context_managers.logging import suppress_logging
 import logging
+from datetime import timedelta
+from typing import Any
 
 @dataclass(kw_only=True)
 class AwaitTask(HasElasticsearch, Step):
@@ -19,6 +21,22 @@ class AwaitTask(HasElasticsearch, Step):
     def has_timed_out(self, elapsed:float) -> bool:
         """Return whether the configured timeout has been exceeded."""
         return self.timeout is not None and elapsed >= self.timeout
+    
+    
+    def format_status(self, response: ObjectApiResponse) -> str:
+        """Return a compact task progress message."""
+        status: dict[str, Any] = response.body.get("task", {}).get("status", {})
+
+        values = {
+            "batches": status.get("batches"),
+            "created": status.get("created"),
+            "updated": status.get("updated"),
+            "total": status.get("total"),
+            "deleted": status.get("deleted"),
+        }
+
+        return " ".join(f"{key}={value}" for key, value in values.items())
+
     
     @tenacity.retry(
             retry=tenacity.retry_if_exception_type(
@@ -47,11 +65,13 @@ class AwaitTask(HasElasticsearch, Step):
             while True:
                 try:
                     response = self.get_task()
+                    ts = timedelta(seconds=elapsed)
+                    status = self.format_status(response)
                     
-                    self._debug(f'{elapsed}: {response.body}')
+                    self._debug(f'{ts}: {status}')
 
                     if response.body.get('completed'):
-                        self._info(f'{elapsed}: {response.body}')
+                        self._info(f'{ts}: {status}')
                         return
                     
                 except NotFoundError:
