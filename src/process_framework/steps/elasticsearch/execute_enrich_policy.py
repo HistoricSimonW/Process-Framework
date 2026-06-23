@@ -1,23 +1,27 @@
 from logging import info
 from dataclasses import dataclass
 from process_framework.steps.composition.elasticsearch.core import HasElasticsearch
-from process_framework import Step, ISettable
+from process_framework import Step, ISettable, IGettable
 
 # https://elasticsearch-py.readthedocs.io/en/v8.2.2/api.html?highlight=execute#elasticsearch.client.EnrichClient.execute_policy:~:text=the%20enrich%20policy-,execute,_policy,-(*%2C%20name%3A%20str
 
 @dataclass(kw_only=True)
 class ExecutePolicy(HasElasticsearch, Step):
     """ execute the specified enrich policy """
-    policy:str
+    policy:str|IGettable[str]
     wait_for_completion:bool=True
     task_id:ISettable[str]|None=None # optional output for an awaitable task
+    
+    def get_policy(self) -> str:
+        return self.policy if isinstance(self.policy, str) else self.policy.get_value()
+    
     
     def do(self):
         # get the enrich client
         enrich = self.elasticsearch.enrich
         
         response = enrich.execute_policy(
-            name=self.policy,
+            name=self.get_policy(),
             wait_for_completion=self.wait_for_completion
         )
 
@@ -40,4 +44,7 @@ class ExecutePolicy(HasElasticsearch, Step):
     
     def preflight(self):
         assert self.elasticsearch.info()
-        assert self.elasticsearch.enrich.get_policy(name=self.policy)
+        if isinstance(self.policy, str):
+            assert self.elasticsearch.enrich.get_policy(name=self.policy)
+        else:
+            self._info(f'ExecutePolicy invoked with IGettable `policy`; cannot evaluate policy existence at preflight')
