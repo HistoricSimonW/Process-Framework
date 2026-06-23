@@ -15,7 +15,7 @@ class UpdateByQuery(HasElasticsearch, Step):
     """ perform an update-by-query operation on an index\n
      https://elasticsearch-py.readthedocs.io/en/v8.2.2/api.html?highlight=execute#elasticsearch.Elasticsearch.update_by_query """
     index:str|Sequence[str]|IGettable[str]|IGettable[Sequence[str]]
-    pipeline:str
+    pipeline:str|IGettable[str]
     query:dict|Query=field(default_factory=MatchAll)
     wait_for_completion:bool=True
     task_id:ISettable[str]|None=None # optional output for an awaitable task
@@ -39,11 +39,10 @@ class UpdateByQuery(HasElasticsearch, Step):
     
     
     def get_index(self) -> str|Sequence:
-        index = self.index
-        if isinstance(index, IGettable):
-            index = index.get_value()
-        return index
+        return self.index.get_value() if isinstance(self.index, IGettable) else self.index
     
+    def get_pipeline(self) -> str|None:
+        return self.pipeline if isinstance(self.pipeline, str) else self.pipeline.get_value()
 
     def do(self):
 
@@ -51,7 +50,7 @@ class UpdateByQuery(HasElasticsearch, Step):
 
         response = self.elasticsearch.update_by_query(
             index=index,
-            pipeline=self.pipeline,
+            pipeline=self.get_pipeline(),
             wait_for_completion=self.wait_for_completion,
             query=self.get_query(),
             **self.update_by_query_kwargs
@@ -81,4 +80,7 @@ class UpdateByQuery(HasElasticsearch, Step):
         elif isinstance(self.index, IGettable):
             self._warn(f'`index` is a reference set at runtime')
 
-        assert self.pipeline in self.elasticsearch.ingest.get_pipeline(id=self.pipeline)
+        if isinstance(self.pipeline, (str, Sequence)):
+            assert self.pipeline in self.elasticsearch.ingest.get_pipeline(id=self.pipeline)
+        elif isinstance(self.pipeline, IGettable):
+            self._warn(f'`pipeline` is a reference set at runtime')
