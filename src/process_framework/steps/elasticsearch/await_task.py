@@ -58,28 +58,32 @@ class AwaitTask(HasElasticsearch, Step):
         elapsed = 0
         interval = self.interval
 
-        with suppress_logging(
-            ["elastic_transport.transport", "urllib3.connectionpool",],
-            level=logging.WARNING,
-        ):
-            while True:
-                try:
-                    response = self.get_task()
-                    ts = timedelta(seconds=elapsed)
-                    status = self.format_status(response)
-                    
-                    self._debug(f'{ts}: {status}')
+        try:
+            with suppress_logging(
+                ["elastic_transport.transport", "urllib3.connectionpool",],
+                level=logging.WARNING,
+            ):
+                while True:
+                    try:
+                        response = self.get_task()
+                        ts = timedelta(seconds=elapsed)
+                        status = self.format_status(response)
+                        
+                        self._debug(f'{ts}: {status}')
 
-                    if response.body.get('completed'):
-                        self._info(f'{ts}: {status}')
+                        if response.body.get('completed'):
+                            self._info(f'{ts}: {status}, COMPLETED')
+                            return
+                        
+                    except NotFoundError:
+                        self._info(f"Task not found; assuming complete: {task_id}")
                         return
                     
-                except NotFoundError:
-                    self._info(f"Task not found; assuming complete: {task_id}")
-                    return
-                
-                sleep(interval)
-                elapsed += interval
-                
-                if self.has_timed_out(elapsed):
-                    raise TimeoutError(f"Timed out waiting for Elasticsearch task: {task_id}")
+                    sleep(interval)
+                    elapsed += interval
+                    
+                    if self.has_timed_out(elapsed):
+                        raise TimeoutError(f"Timed out waiting for Elasticsearch task: {task_id}")
+        except KeyboardInterrupt:
+            self.elasticsearch.tasks.cancel(task_id=task_id)
+            self._warn(f'Task `{task_id}` cancelled by KeyboardInterrupt')
