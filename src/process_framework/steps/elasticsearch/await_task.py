@@ -69,10 +69,15 @@ class AwaitTask(HasElasticsearch, Step):
                         ts = timedelta(seconds=elapsed)
                         status = self.format_status(response)
                         
-                        self._debug(f'{ts}: {status}')
+                        created = response.get("created", 0)
+                        updated = response.get("updated", 0)
+                        total = response.get("total", -1)
+                        
+                        perc = f'{(created + updated) / total:.0%}'
+                        self._debug(f'{ts}: {status} (perc)')
 
                         if response.body.get('completed'):
-                            self._info(f'{ts}: {status}, COMPLETED')
+                            self._info(f'{ts}: {status}, ({perc}) COMPLETED')
                             return
                         
                     except NotFoundError:
