@@ -38,12 +38,22 @@ class AwaitTask(HasElasticsearch, Step):
         return " ".join(f"{key}={value}" for key, value in values.items())
 
     
-    def get_percent_complete(self, response: ObjectApiResponse, total:int) -> float:
+    def get_percent_complete(self, response: ObjectApiResponse) -> float:
         status: dict[str, Any] = response.body.get("task", {}).get("status", {})
 
-        seen = status.get('created', 0) + status.get('updated', 0) + status.get('deleted', 0)
-        
-        return seen / total
+        total = status.get("total", 0)
+        if not total:
+            return 0.0
+
+        seen = (
+            status.get("created", 0)
+            + status.get("updated", 0)
+            + status.get("deleted", 0)
+            + status.get("noop", 0)
+            + status.get("version_conflicts", 0)
+        )
+
+        return min(seen / total, 1.0)
     
     
     @tenacity.retry(
