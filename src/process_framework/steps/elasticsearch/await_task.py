@@ -74,7 +74,7 @@ class AwaitTask(HasElasticsearch, Step):
                         total = response.get("total", -1)
                         
                         perc = f'{(created + updated) / total:.0%}'
-                        self._debug(f'{ts}: {status} (perc)')
+                        self._debug(f'{ts}: {status} ({perc})')
 
                         if response.body.get('completed'):
                             self._info(f'{ts}: {status}, ({perc}) COMPLETED')
