@@ -86,10 +86,8 @@ class AwaitTask(HasElasticsearch, Step):
                         response = self.get_task()
                         ts = timedelta(seconds=elapsed)
                         status = self.format_status(response)
-                        
-                        total = response.get("total", -1)
-                        
-                        perc = self.get_percent_complete(response, total)
+                                                
+                        perc = self.get_percent_complete(response)
                         self._debug(f'{ts}: {status} ({perc:.0%})')
 
                         if response.body.get('completed'):
