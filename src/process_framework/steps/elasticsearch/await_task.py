@@ -38,6 +38,14 @@ class AwaitTask(HasElasticsearch, Step):
         return " ".join(f"{key}={value}" for key, value in values.items())
 
     
+    def get_percent_complete(self, response: ObjectApiResponse, total:int) -> float:
+        status: dict[str, Any] = response.body.get("task", {}).get("status", {})
+
+        seen = status.get('created', 0) + status.get('updated', 0) + status.get('deleted', 0)
+        
+        return seen / total
+    
+    
     @tenacity.retry(
             retry=tenacity.retry_if_exception_type(
             (ConnectionError, ConnectionTimeout, TimeoutError)
@@ -69,15 +77,13 @@ class AwaitTask(HasElasticsearch, Step):
                         ts = timedelta(seconds=elapsed)
                         status = self.format_status(response)
                         
-                        created = response.get("created", 0)
-                        updated = response.get("updated", 0)
                         total = response.get("total", -1)
                         
-                        perc = f'{(created + updated) / total:.0%}'
-                        self._debug(f'{ts}: {status} ({perc})')
+                        perc = self.get_percent_complete(response, total)
+                        self._debug(f'{ts}: {status} ({perc:.0%})')
 
                         if response.body.get('completed'):
-                            self._info(f'{ts}: {status}, ({perc}) COMPLETED')
+                            self._info(f'{ts}: {status} ({perc:.0%}) COMPLETED')
                             return
                         
                     except NotFoundError:
