@@ -66,3 +66,19 @@ class ChainIterables[T](AssigningStep[Iterable[T]]):
                 iterable = iterable.get_value()
             
             yield from iterable
+            
+from typing import Sequence
+from itertools import batched
+
+@dataclass
+class BatchIterable[TIn, TItem](TransformingStep[TIn, Iterable[Sequence[TItem]]]):
+    batch_size:int
+    
+    def gen_items(self, input_:TIn) -> Iterable[Sequence[TItem]]:
+        if isinstance(input_, Iterable):
+            return batched(input_, self.batch_size)
+        raise Exception()
+    
+
+    def transform_value(self, input_: TIn) -> Iterable[Sequence[TItem]]:
+        return self.gen_items(input_)

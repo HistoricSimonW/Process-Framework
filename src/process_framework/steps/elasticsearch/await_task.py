@@ -106,3 +106,4 @@ class AwaitTask(HasElasticsearch, Step):
         except KeyboardInterrupt:
             self.elasticsearch.tasks.cancel(task_id=task_id)
             self._warn(f'Task `{task_id}` cancelled by KeyboardInterrupt')
+            raise
