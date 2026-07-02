@@ -8,7 +8,8 @@ class ElasticsearchClientArgs(HasMaskedFields, BaseModel):
     """ mixin for settings that initialize an elasticsearch client """
     cloud_id:Annotated[str, Masked(4)]
     api_key:Annotated[str, Masked(4)]
-
+    verify_certs:bool=True
+    
     def get_client(self) -> Elasticsearch:
         return Elasticsearch(**self.model_dump(
                 include=set(ElasticsearchClientArgs.model_fields.keys()),
