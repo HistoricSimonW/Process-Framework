@@ -6,7 +6,7 @@ from elasticsearch.client import Elasticsearch
 from elasticsearch.helpers import scan
 from pandas import DataFrame, Index, Series, NA
 
-from process_framework import AssigningStep
+from process_framework import AssigningStep, IGettable
 from process_framework.context_managers.logging import suppress_logging
 
 
@@ -20,8 +20,8 @@ class AssignScanResult[T: (DataFrame, Series, Index)](AssigningStep[T]):
 
     # query args
     elasticsearch: Elasticsearch
-    index: str
-    query: dict | None = None
+    index: str|IGettable[str]
+    query: dict | IGettable[dict] | None = None
     size: int | None = None
     source: str | list[str] | None = None
     filter_path: str | None = None
@@ -35,12 +35,18 @@ class AssignScanResult[T: (DataFrame, Series, Index)](AssigningStep[T]):
     drop_index_column: bool = True
     dtypes: dict[str, Any] | None = None
 
+    def get_index(self) -> str:
+        return self.index.get_value() if isinstance(self.index, IGettable) else self.index
+    
+    def get_query(self) -> dict|None:
+        return self.query.get_value() if isinstance(self.query, IGettable) else self.query
+    
     def scan(self) -> Iterable[dict]:
         """ initialize a scan; yield hits as dicts """
         args: dict[str, Any] = {
             "client": self.elasticsearch,
-            "query": self.query,
-            "index": self.index,
+            "query": self.get_query(),
+            "index": self.get_index(),
             "source": self.source,
             "filter_path": self.filter_path,
         }
@@ -174,4 +180,6 @@ class AssignScanResult[T: (DataFrame, Series, Index)](AssigningStep[T]):
 
     def preflight(self):
         assert self.elasticsearch.info()
-        assert self.elasticsearch.indices.exists(index=self.index)
+        if isinstance(self.index, IGettable):
+            self._info(f'`index` is an `IGettable` resolved at runtime')
+        assert self.elasticsearch.indices.exists(index=self.get_index())
