@@ -1,2 +1,2 @@
 from .reference import Reference
-from .composition.core import IGettable, ISettable, ITyped
+from .composition.core import IGettable, ISettable, ITyped, resolve, ValueOrReference

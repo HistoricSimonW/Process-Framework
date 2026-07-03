@@ -1,17 +1,7 @@
 from dataclasses import dataclass
 from .composition.core import IGettable, ISettable, ITyped
 from ..composition.core.logging import HasLogger
-
-import reprlib
-
-# one small, shared repr truncator
-_repr = reprlib.Repr(
-    maxstring = 30, 
-    maxother = 30,
-    maxlist=3,
-    maxtuple = 3, 
-    maxdict = 3
-)
+from typing import TypeAlias, TypeVar
 
 
 @dataclass(slots=True)
