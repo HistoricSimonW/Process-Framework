@@ -18,9 +18,15 @@ class UpdateByQuery(HasElasticsearch, Step):
     pipeline:str|IGettable[str]
     query:dict|Query=field(default_factory=MatchAll)
     wait_for_completion:bool=True
-    task_id:ISettable[str]|None=None # optional output for an awaitable task
+    conflicts:str='abort'
+    refresh:bool=True
+    requests_per_second:int=-1
+    scroll_size:int|None=None
+    slices:int|str='auto'
+    
     update_by_query_kwargs:dict[str, Any]=field(default_factory=dict)
-
+    task_id:ISettable[str]|None=None # optional output for an awaitable task
+    
 
     def get_query(self) -> dict:
         query = self.query
@@ -37,7 +43,6 @@ class UpdateByQuery(HasElasticsearch, Step):
         
         return query.get_query()
     
-    
     def get_index(self) -> str|Sequence:
         return self.index.get_value() if isinstance(self.index, IGettable) else self.index
     
@@ -53,6 +58,11 @@ class UpdateByQuery(HasElasticsearch, Step):
             pipeline=self.get_pipeline(),
             wait_for_completion=self.wait_for_completion,
             query=self.get_query(),
+            conflicts=self.conflicts,
+            refresh=self.refresh,
+            requests_per_second=self.requests_per_second,
+            scroll_size=self.scroll_size,
+            slices=self.slices,
             **self.update_by_query_kwargs
         )
 

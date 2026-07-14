@@ -23,7 +23,7 @@ class ITransformValue[TIn, TOut](ABC):
 class StepMixin(Preflightable, ABC):
     """mixin that participates in preflight chains with default logging."""
     def preflight(self) -> None:
-        self._warn('base mixin preflight')
+        self._debug('Base preflight for StepMixin')
         super().preflight()
 
 
