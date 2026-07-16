@@ -33,6 +33,7 @@ class AwaitTask(HasElasticsearch, Step):
             "updated": status.get("updated"),
             "total": status.get("total"),
             "deleted": status.get("deleted"),
+            "version_conflicts": status.get("version_conflicts", 0)
         }
 
         return " ".join(f"{key}={value}" for key, value in values.items())
@@ -103,6 +104,7 @@ class AwaitTask(HasElasticsearch, Step):
                     
                     if self.has_timed_out(elapsed):
                         raise TimeoutError(f"Timed out waiting for Elasticsearch task: {task_id}")
+        
         except KeyboardInterrupt:
             self.elasticsearch.tasks.cancel(task_id=task_id)
             self._warn(f'Task `{task_id}` cancelled by KeyboardInterrupt')

@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from .composition.core import IGettable, ISettable, ITyped
 from ..composition.core.logging import HasLogger
-from typing import TypeAlias, TypeVar
 
 
 @dataclass(slots=True)
@@ -14,12 +13,12 @@ class Reference[T](IGettable[T], ISettable[T], ITyped[T], HasLogger):
         return self._type
 
     def _on_set(self, value: T | None) -> None:
-        self._info(f'{type(self.value)} -> {type(value)}')
+        self._debug(f'{type(self.value)} -> {type(value)}')
         self.value = value
 
     def get_value(self) -> T:
         if self.value is None:
-            raise ValueError()
+            raise ValueError("`get_value` was called on an unset `Reference`")
         return self.value
 
     def has_value(self) -> bool:

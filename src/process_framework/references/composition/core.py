@@ -52,6 +52,7 @@ class ISettable[T](IHasable, ITyped[T]):
 
 T = TypeVar("T")
 ValueOrReference:TypeAlias = T | IGettable[T]
+""" A TypeAlias indicating a value that is a `T` or an `IGettable[T]`; returns a `T` when `resolve` is called on it """
 
 def resolve[T](ref_or_value:ValueOrReference[T]) -> T:
     """Return the concrete value from a value or an `IGettable` reference."""
