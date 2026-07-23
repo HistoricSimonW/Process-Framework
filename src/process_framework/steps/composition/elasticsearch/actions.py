@@ -23,6 +23,9 @@ class BulkAction(BaseModel, ABC):
     def op_type(self) -> OpType:
         ...
 
+    
+    def _dump(self) -> dict:
+        return self.model_dump(exclude_none=True, by_alias=True)
 
 class IndexAction(BulkAction):
     """ a bulk index action\n
@@ -47,7 +50,7 @@ class IndexAction(BulkAction):
     @staticmethod
     def from_documents(documents: Iterable[DocumentBase], index:str) -> Iterable['dict']:
         for doc in documents:
-            yield IndexAction.from_document(doc, index).model_dump(exclude_none=True, by_alias=True)
+            yield IndexAction.from_document(doc, index)._dump()
             
     
 class UpdateAction(BulkAction):
@@ -71,7 +74,7 @@ class UpdateAction(BulkAction):
     @staticmethod
     def from_documents(documents: Iterable[DocumentBase], index:str) -> Iterable['dict']:
         for doc in documents:
-            yield UpdateAction.from_document(doc, index).model_dump(exclude_none=True, by_alias=True)
+            yield UpdateAction.from_document(doc, index)._dump()
 
 
 class DeleteAction(BulkAction):
@@ -91,4 +94,4 @@ class DeleteAction(BulkAction):
     @staticmethod
     def from_documents(documents: Iterable[DocumentBase], index:str) -> Iterable['dict']:
         for doc in documents:
-            yield DeleteAction.from_document(doc, index).model_dump(exclude_none=True, by_alias=True)
+            yield DeleteAction.from_document(doc, index)._dump()
