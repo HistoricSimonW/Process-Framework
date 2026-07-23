@@ -1,10 +1,9 @@
-from ...references import Reference
-from ..step import TransformingStep
 from pydantic import BaseModel
 from pandas import DataFrame, Series
 from typing import Any, Type, Iterable
 from dataclasses import dataclass
 from process_framework.helpers.pydantic import gen_models_from_records
+from process_framework import Reference, TransformingStep
 
 @dataclass
 class GetModelsForDataFrame[T:BaseModel](TransformingStep[DataFrame, Series]):
