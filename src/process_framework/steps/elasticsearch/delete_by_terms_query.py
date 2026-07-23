@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from process_framework.steps.composition.elasticsearch import HasElasticsearch, HasElasticsearchIndex
 from process_framework.steps.composition.core import HasInput
 from process_framework.references.composition.core import ISettable
+from process_framework import resolve
 
 @dataclass(kw_only=True)
 class DeleteByTerms(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable], Step):
@@ -22,7 +23,7 @@ class DeleteByTerms(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable],
         self._info('performing `delete_by_query` with a terms query')
         for i, batch in enumerate(batches):
             result = self.elasticsearch.delete_by_query(
-                index=self.index,
+                index=resolve(self.index),
                 query={
                     'terms':{
                         self.field:list(batch)
@@ -34,4 +35,4 @@ class DeleteByTerms(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable],
     
     def preflight(self):
         assert self.elasticsearch.info()
-        assert self.elasticsearch.indices.exists(index=self.index)
+        assert self.elasticsearch.indices.exists(index=resolve(self.index))

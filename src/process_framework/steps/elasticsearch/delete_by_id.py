@@ -8,7 +8,7 @@ from typing import Iterable
 from dataclasses import dataclass
 from process_framework.steps.composition.elasticsearch.core import HasElasticsearch, HasElasticsearchIndex
 from process_framework.steps.composition.core import HasInput, HasOptionalOutput
-
+from process_framework import resolve
 @dataclass(kw_only=True)
 class DeleteById(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[str]], HasOptionalOutput[Any], Step):
     
@@ -16,7 +16,7 @@ class DeleteById(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[str]
         """Yield bulk delete actions for the supplied document IDs."""
         for _id in _ids:
             yield {
-                '_index':self.index,
+                '_index':resolve(self.index),
                 '_op_type': 'delete',
                 '_id': _id,
             }
@@ -31,7 +31,7 @@ class DeleteById(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[str]
 
         result = bulk(
             client=self.elasticsearch,
-            index=self.index,
+            index=resolve(self.index),
             actions=actions
         )
 
@@ -44,4 +44,4 @@ class DeleteById(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[str]
     
     def preflight(self):
         assert self.elasticsearch.info()
-        assert self.elasticsearch.indices.exists(index=self.index)
+        assert self.elasticsearch.indices.exists(index=resolve(self.index))

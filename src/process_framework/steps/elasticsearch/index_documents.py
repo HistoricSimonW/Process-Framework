@@ -17,7 +17,7 @@ from process_framework.steps.composition.elasticsearch.core import (
     HasElasticsearchIndex,
 )
 from process_framework.steps.composition.elasticsearch.document import DocumentBase
-
+from process_framework import resolve
 
 from process_framework.context_managers.logging import suppress_logging
 
@@ -64,7 +64,7 @@ class IndexDocuments(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[
 
     def do(self):
         docs = self.input_.get_value()
-        actions = IndexAction.from_documents(docs, self.index)
+        actions = IndexAction.from_documents(docs, resolve(self.index))
         kwargs = self.get_bulk_kwargs()
         self._info(f"Indexing documents into {self.index} with pipeline={self.pipeline!r}")
         errors = []

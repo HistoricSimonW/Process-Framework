@@ -10,6 +10,7 @@ from elasticsearch.helpers import scan
 from pydantic import BaseModel
 
 # first-party
+from process_framework import ValueOrReference, resolve
 from process_framework.steps.step import AssigningStep
 from process_framework.steps.composition.core import HasOutput, ITransformValue, StepMixin
 
@@ -78,12 +79,12 @@ class HasElasticsearchIndexBase(HasElasticsearch):
 @dataclass(kw_only=True)
 class HasElasticsearchIndex(HasElasticsearchIndexBase):
     """mixin requiring a generic index and validating its existence."""
-    index:str
+    index:ValueOrReference[str]
     assert_index_exists:bool=True
 
     def preflight(self) -> None:
         try:
-            self.check_index(self.index, 'index')
+            self.check_index(resolve(self.index), 'index')
         except ValueError as e:
             if not self.assert_index_exists:
                 self._info(f'index `{self.index}` does not exist')
@@ -101,18 +102,20 @@ class HasElasticsearchQuery(StepMixin):
 @dataclass(kw_only=True)
 class HasElasticsearchTargetIndex(HasElasticsearchIndexBase):
     """mixin requiring a target index and validating its existence."""
-    target_index:str
+    target_index:ValueOrReference[str]
+    
     def preflight(self) -> None:
-        self.check_index(self.target_index, 'target')
+        self.check_index(resolve(self.target_index), 'target')
         return super().preflight()
     
 
 @dataclass(kw_only=True)
 class HasElasticsearchSourceIndex(HasElasticsearchIndexBase):
     """mixin requiring a source index and validating its existence."""
-    source_index:str
+    source_index:ValueOrReference[str]
+    
     def preflight(self) -> None:
-        self.check_index(self.source_index, 'source')
+        self.check_index(resolve(self.source_index), 'source')
         return super().preflight()
 
 
