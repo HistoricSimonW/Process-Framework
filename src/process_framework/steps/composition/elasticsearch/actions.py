@@ -71,7 +71,7 @@ class UpdateAction(BulkAction):
     @staticmethod
     def from_documents(documents: Iterable[DocumentBase], index:str) -> Iterable['dict']:
         for doc in documents:
-            yield UpdateAction.from_document(doc, index).model_dump(exclude_none=True)
+            yield UpdateAction.from_document(doc, index).model_dump(exclude_none=True, by_alias=True)
 
 
 class DeleteAction(BulkAction):
@@ -91,4 +91,4 @@ class DeleteAction(BulkAction):
     @staticmethod
     def from_documents(documents: Iterable[DocumentBase], index:str) -> Iterable['dict']:
         for doc in documents:
-            yield DeleteAction.from_document(doc, index).model_dump(exclude_none=True)
+            yield DeleteAction.from_document(doc, index).model_dump(exclude_none=True, by_alias=True)
