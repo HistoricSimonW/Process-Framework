@@ -1,15 +1,10 @@
 
 # stdlib
 from abc import abstractmethod, ABC
-from typing import Self
 from dataclasses import dataclass
 
 # first-party (process_framework / process)
-from ..steps import Step
-from .clients import ClientsBase
-from .references import ReferencesBase
-from .settings import SettingsBase
-from .pipeline import Pipeline
+from process_framework import Step, ClientsBase, ReferencesBase, SettingsBase, Pipeline
 from typing import NamedTuple
 
 @dataclass(kw_only=True)

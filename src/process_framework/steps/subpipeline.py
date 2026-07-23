@@ -1,15 +1,18 @@
-from process_framework import Step, SettingsBase, ReferencesBase, ClientsBase
+from process_framework import Step, SettingsBase, ReferencesBase, ClientsBase, ValueOrReference, resolve
 from process_framework.pipeline.subpipeline import SubpipelineDefinitionBase
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from collections.abc import Iterable
 
-@dataclass
+@dataclass(kw_only=True)
 class ExecuteSubPipeline[
         TSettings: SettingsBase,
         TInnerReferences: ReferencesBase,
         TContext,
         TClients: ClientsBase,
     ](Step, ABC):
+    """Instantiate, validate, and execute a subpipeline."""
+
     definition:SubpipelineDefinitionBase[
         TSettings,
         TInnerReferences,
@@ -18,7 +21,7 @@ class ExecuteSubPipeline[
     ]
     
     def do(self):
-        """ construct an instance of a subpipeline, preflight it and execute it """
+        """Construct an instance of a subpipeline, preflight it and execute it"""
         context = self.initialize_context()
         pipeline = self.definition.instantiate_pipeline(context)
         pipeline.preflight()
@@ -26,39 +29,34 @@ class ExecuteSubPipeline[
     
     @abstractmethod
     def initialize_context(self) -> TContext:
-        """ initialize the execution context for this pipeline run """
+        """Initialize the execution context for this pipeline run"""
         ...
         
-from typing import Any
-from process_framework import IGettable
-from collections.abc import Iterable
-@dataclass
+
+@dataclass(kw_only=True)
 class ExecuteSubpipelineForEach[
         TIn,
         TSettings: SettingsBase,
         TInnerReferences: ReferencesBase,
-        TContext,
         TClients: ClientsBase,
     ](Step, ABC):
     definition:SubpipelineDefinitionBase[
         TSettings,
         TInnerReferences,
-        TContext,
+        TIn,
         TClients,
     ]
-    items:IGettable[Iterable[TIn]]|Iterable[TIn]
+    """Execute a subpipeline once for each input item."""
     
-    @abstractmethod
-    def initialize_context(self, item:TIn) -> TContext:
-        """ initialize the execution context for this pipeline run with the provided input"""
-        ...
+    items:ValueOrReference[Iterable[TIn]]
         
     def get_items(self) -> Iterable[TIn]:
-        return self.items.get_value() if isinstance(self.items, IGettable) else self.items
-        
+        """Iterate the input items"""
+        return resolve(self.items)
+
     def do(self):
+        """For each item in the input, initialize a context and execute the pipeline"""
         for item in self.get_items():
-            context = self.initialize_context(item)
-            pipeline = self.definition.instantiate_pipeline(context)
+            pipeline = self.definition.instantiate_pipeline(item)
             pipeline.preflight()
             pipeline.do()
