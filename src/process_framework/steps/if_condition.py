@@ -23,6 +23,7 @@ class Condition(ABC):
     def evaluate(self) -> bool:
         ...
 
+@dataclass(kw_only=True)
 class CountCondition(Condition):
     countable:ValueOrReference
     target:ValueOrReference[int]
