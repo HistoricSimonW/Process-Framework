@@ -4,21 +4,33 @@ from ..composition.core.logging import HasLogger
 from typing import Iterable
 
 @dataclass(slots=True)
-class ListAccumulator[T](IGettable[Iterable[T]], ISettable[T], HasLogger):
-    """ accumulate single Ts into a list"""
+class ListExtender[T](IGettable[list[T]], ISettable[Iterable[T]], HasLogger):
+    """ holds a list of Ts, accepts iterables of Ts as an ISettable, adds Ts from the iterable to the list """
     item_type:type[T]
     values:list[T] = field(default_factory=list)
-
-    def _on_set(self, value: T | None) -> None:
+    
+    def set_value(self, value: Iterable[T] | None) -> None:
+        print(value)
+        return self._on_set(value)
+    
+    def _on_set(self, value: Iterable[T] | None) -> None:
+        pre = len(self.values)
         if value is not None:
-            self.values.append(value)
-        self._info(f'+{value} -> ({len(self.values)})')
-
-    def get_value(self) -> list[T]:
-        return self.values
-
+            for v in value:
+                print(v)
+                self.values.append(v)
+            
+        post = len(self.values)
+        self._info(f'{pre} -> {post}')
+    
+    def get_type(self) -> type:
+        return type(self.values)
+    
     def has_value(self) -> bool:
         return self.values is not None
+    
+    def get_value(self) -> list[T]:
+        return self.values
 
 
 @dataclass(slots=True)
