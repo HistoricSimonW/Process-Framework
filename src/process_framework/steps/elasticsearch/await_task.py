@@ -1,4 +1,4 @@
-from process_framework import Step, IGettable
+from process_framework import Step, IGettable, ISettable
 from elasticsearch import NotFoundError
 from elastic_transport import ObjectApiResponse
 from ..composition.elasticsearch import HasElasticsearch
@@ -17,6 +17,8 @@ class AwaitTask(HasElasticsearch, Step):
     task_id:IGettable[str]
     interval:float=15
     timeout:int|None=None
+    result:ISettable[dict|None]|None
+    """ optional settable result object; the value of response.body """
     
     def has_timed_out(self, elapsed:float) -> bool:
         """Return whether the configured timeout has been exceeded."""
@@ -90,7 +92,10 @@ class AwaitTask(HasElasticsearch, Step):
                                                 
                         perc = self.get_percent_complete(response)
                         self._debug(f'{ts}: {status} ({perc:.0%})')
-
+                        
+                        if isinstance(self.result, ISettable):
+                            self.result.set_value(response.body)
+                            
                         if response.body.get('completed'):
                             self._info(f'{ts}: {status} ({perc:.0%}) COMPLETED')
                             return
