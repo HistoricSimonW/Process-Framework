@@ -17,7 +17,7 @@ class AwaitTask(HasElasticsearch, Step):
     task_id:IGettable[str]
     interval:float=15
     timeout:int|None=None
-    result:ISettable[dict|None]|None
+    result:ISettable[dict|None]|None=None
     """ optional settable result object; the value of response.body """
     
     def has_timed_out(self, elapsed:float) -> bool:
