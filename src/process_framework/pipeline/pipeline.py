@@ -54,9 +54,9 @@ class PipelineDefinitionBase[
         ...
 
     @classmethod
-    def from_environment(cls, argsv=None) -> Self:
+    def from_environment(cls, argsv=None, **kwargs) -> Self:
         """Initialize a builder from environment and CLI state."""
-        settings = cls.get_settings_type().from_environment(argsv)
+        settings = cls.get_settings_type().from_environment(argsv, **kwargs)
         return cls.from_settings(settings)
     
     

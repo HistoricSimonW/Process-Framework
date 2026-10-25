@@ -77,7 +77,7 @@ class SettingsBase(BaseSettings):
 
 
     @classmethod
-    def from_environment(cls, argsv=None) -> Self:
+    def from_environment(cls, argsv=None, **overrides) -> Self:
         """construct settings from a cli-selected env file."""
         # initialize the parser with default '--env-file' and args from the model
         parser = ArgumentParser()
@@ -95,4 +95,8 @@ class SettingsBase(BaseSettings):
         cli_overrides = {k: v for k, v in data.items() if v is not None}
         init_kwargs = {'_env_file':env_file} if env_file else {}
 
-        return cls(**init_kwargs, **cli_overrides)
+        return cls(
+            **init_kwargs, 
+            **cli_overrides,
+            **overrides,    
+        )

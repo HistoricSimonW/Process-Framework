@@ -45,23 +45,22 @@ class EnvironmentSettings(SettingsBase):
         
 
 @dataclass(kw_only=True)
-class Runner():
+class Runner:
     """Run a pipeline definition from environment and CLI settings."""
     definition:type[PipelineDefinitionBase]
     environment_settings:type[EnvironmentSettings] = EnvironmentSettings
 
-    def run(self, argsv: Sequence[str] | None = None) -> int:
+    def run(self, argsv: Sequence[str] | None = None, **kwargs) -> int:
         """Configure logging, instantiate the pipeline, and execute it."""
         if argsv is None:
             argsv = sys.argv[1:]
         
+        # configure logging from the environment
         settings = self.environment_settings.from_environment(argsv)
-
         self.configure_logging(settings, None)
-
-        definition = self.definition.from_environment(
-            argsv=argsv
-        )
+        
+        # construct a definition from the environment
+        definition = self.definition.from_environment(argsv=argsv)
 
         pipeline = definition.instantiate_pipeline()
 
@@ -80,7 +79,11 @@ class Runner():
         log_level = settings.get_log_level()
 
         logger = logger or logging.getLogger()
-        logger.handlers.clear()
+        
+        for handler in list(logger.handlers):
+            logger.removeHandler(handler)
+            handler.close()
+        
         logger.setLevel(log_level)
         
         format = logging.Formatter(
