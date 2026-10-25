@@ -1,46 +1,37 @@
-from ..reference import Reference
-from pandas import Series, DataFrame
-from typing import Iterable
+from dataclasses import dataclass
+from pandas import DataFrame, Series
+from ... import ValueOrReference, resolve
+from ..reference import IGettable
 
 
-class IndexReference(Reference[Series]):
-    """ a reference to the index, or a level of the index, of the value of a Reference[DataFrame] """
-    def __init__(self, df:Reference[DataFrame], level:int|None=None):
-        self._type = Series
-        self.df = df
-        self.level=level
-    
-
-    # def is_instance_of(self, class_or_tuple) -> bool:
-    #     if not self.has_value():
-    #         return False
-        
-    #     if isinstance(class_or_tuple, type):
-    #         return class_or_tuple == Series
-        
-    #     if isinstance(class_or_tuple, Iterable):
-    #         return Series in class_or_tuple
-        
-    #     return False
-
+@dataclass
+class IndexReference(IGettable[Series]):
+    """Reference a DataFrame index or one of its levels."""
+    df: ValueOrReference[DataFrame]
+    level: int | None = None
 
     def has_value(self) -> bool:
-        """ returns True if self.df has a value; throws an error if self.df has a value, but its index lacks the specified `level` """
-        try:
-            df:DataFrame = self.df.get_value()
-        except:
+        df = resolve(self.df)
+
+        if df is None:
             return False
-        
-        if not isinstance(self.level, int):
-            return True
-        
-        assert df.index.get_level_values(self.level)
+
+        if self.level is not None:
+            df.index.get_level_values(self.level)
+
         return True
 
 
     def get_value(self) -> Series:
-        """ get the values of `self.df.index` (optionally at `level` if specified) as a Series """
-        df:DataFrame = self.df.get_value()
-        if isinstance(self.level, int):
-            return df.index.get_level_values(self.level).to_series()
+        df = resolve(self.df)
+
+        if self.level is not None:
+            return df.index.get_level_values(self.level).to_series(
+                index=df.index
+            )
+
         return df.index.to_series()
+
+
+    def get_type(self) -> type[Series]:
+        return Series
