@@ -60,7 +60,7 @@ class Runner:
         self.configure_logging(settings, None)
         
         # construct a definition from the environment
-        definition = self.definition.from_environment(argsv=argsv)
+        definition = self.definition.from_environment(argsv=argsv, **kwargs)
 
         pipeline = definition.instantiate_pipeline()
 
