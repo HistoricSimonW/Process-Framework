@@ -56,7 +56,7 @@ class Runner:
             argsv = sys.argv[1:]
         
         # configure logging from the environment
-        settings = self.environment_settings.from_environment(argsv)
+        settings = self.environment_settings.from_environment(argsv, **kwargs)
         self.configure_logging(settings, None)
         
         # construct a definition from the environment
