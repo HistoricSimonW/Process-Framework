@@ -1,15 +1,17 @@
-from process_framework import Step, IGettable, ISettable
-from elasticsearch import NotFoundError
-from elastic_transport import ObjectApiResponse
-from ..composition.elasticsearch import HasElasticsearch
-from time import sleep
-from dataclasses import dataclass
-import tenacity
-from elasticsearch import ConnectionError, ConnectionTimeout
-from process_framework.context_managers.logging import suppress_logging
 import logging
+from dataclasses import dataclass
 from datetime import timedelta
+from time import sleep
 from typing import Any
+
+import tenacity
+from elasticsearch import ConnectionError, ConnectionTimeout, NotFoundError
+from elastic_transport import ObjectApiResponse
+
+from process_framework import IGettable, ISettable, Step
+from process_framework.context_managers.logging import suppress_logging
+
+from ..composition.elasticsearch import HasElasticsearch
 
 @dataclass(kw_only=True)
 class AwaitTask(HasElasticsearch, Step):
@@ -96,8 +98,13 @@ class AwaitTask(HasElasticsearch, Step):
                         if isinstance(self.result, ISettable):
                             self.result.set_value(response.body)
                             
-                        if response.body.get('completed'):
-                            self._info(f'{ts}: {status} ({perc:.0%}) COMPLETED')
+                        if response.body.get("completed"):
+                            if error := response.body.get("error"):
+                                raise RuntimeError(
+                                    f"Elasticsearch task {task_id} failed: {error}"
+                                )
+
+                            self._info(f"{ts}: {status} ({perc:.0%}) COMPLETED")
                             return
                         
                     except NotFoundError:

@@ -1,10 +1,12 @@
-from process_framework import Step, IGettable, ISettable
-from process_framework.steps.composition.elasticsearch import HasElasticsearch, HasElasticsearchSourceIndex, HasElasticsearchTargetIndex
-from pydantic import BaseModel, ConfigDict
-from process_framework.steps.composition.elasticsearch.query import Query
 from abc import ABC, abstractmethod
-from typing import Any
 from dataclasses import dataclass
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict
+
+from process_framework import IGettable, ISettable, Step
+from process_framework.steps.composition.elasticsearch import HasElasticsearch
+from process_framework.steps.composition.elasticsearch.query import Query
 
 
 class ReindexArgBase(BaseModel, ABC):
@@ -24,7 +26,7 @@ class ReindexArgBase(BaseModel, ABC):
     
 class ReindexSource(ReindexArgBase):
     """Source configuration for a reindex request."""
-    query:Query|dict[str, Any]|None
+    query:Query|dict[str, Any]|None=None
     size:int|None=None
     sort:str|None=None
     

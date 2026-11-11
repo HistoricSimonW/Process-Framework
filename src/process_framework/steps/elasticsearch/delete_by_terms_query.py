@@ -1,14 +1,13 @@
-from process_framework import Step, Reference, resolve
-from elasticsearch.client import Elasticsearch
-from typing import Any
-from typing import Iterable
-from itertools import batched
-import logging
 from dataclasses import dataclass
-from process_framework.steps.composition.elasticsearch import HasElasticsearch, HasElasticsearchIndex
+from itertools import batched
+from typing import Iterable
+
+from process_framework import Step, resolve
 from process_framework.steps.composition.core import HasInput
-from process_framework.references.composition.core import ISettable
-from process_framework import resolve
+from process_framework.steps.composition.elasticsearch import (
+    HasElasticsearch,
+    HasElasticsearchIndex,
+)
 
 @dataclass(kw_only=True)
 class DeleteByTerms(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable], Step):

@@ -1,46 +1,61 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, KW_ONLY
+from dataclasses import dataclass
+
 from ..lifecycle.preflight import Preflightable
-from .composition.core import IGenerateValue, ITransformValue, HasOutput, HasInput
+from .composition.core import (
+    HasInput,
+    HasOutput,
+    IGenerateValue,
+    ITransformValue,
+)
 from ...process_framework import resolve
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Step(Preflightable, ABC):
-    """abstract pipeline step with preflight and execution lifecycle."""
+    """Base step with preflight and execution lifecycle."""
+
     def preflight(self) -> None:
-        self._info('base preflight')
+        self._info("base preflight")
         super().preflight()
 
     @abstractmethod
-    def do(self):
+    def do(self) -> None:
+        """Execute the step."""
         ...
 
 
-@dataclass
+@dataclass(kw_only=True)
 class AssigningStep[T](Step, HasOutput[T], IGenerateValue[T]):
-    """step that assigns a generated value to its output."""
-    _ : KW_ONLY
-    overwrite:bool=True
-    def do(self):
-        if not self.output_.has_value() or self.overwrite:
-            value = self.generate_value()
-            self.output_.set_value(value)
-    
+    """Assign a generated value to an output."""
 
-@dataclass
-class TransformingStep[TIn, TOut](AssigningStep[TOut], HasInput[TIn], ITransformValue[TIn, TOut]):
-    """step that generates output by transforming its input."""
-    def generate_value(self) -> TOut | None:
-        value = resolve(self.input_)
-        return self.transform_value(value)
+    overwrite: bool = True
+    """ if False, generation is skipped when output_ has a value """
+
+    def do(self) -> None:
+        """Generate and assign a value to an output."""
+        if self.overwrite or not self.output_.has_value():
+            self.output_.set_value(self.generate_value())
+
+
+@dataclass(kw_only=True)
+class TransformingStep[TIn, TOut](
+        AssigningStep[TOut],
+        HasInput[TIn],
+        ITransformValue[TIn, TOut],
+    ):
+    """Assign the result of transforming an input."""
+
+    def generate_value(self) -> TOut:
+        """Generate a value by transforming the resolved input."""
+        return self.transform_value(resolve(self.input_))
 
     @abstractmethod
     def transform_value(self, input_: TIn) -> TOut:
+        """Transform an input value."""
         ...
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ModifyingStep[T](TransformingStep[T, T]):
-    """specialised transforming step where input and output types are the same."""
-    ...
+    """Transform a value without changing its type."""

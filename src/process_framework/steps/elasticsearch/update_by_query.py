@@ -1,12 +1,11 @@
-from process_framework import Step, IGettable, ISettable
-from elasticsearch import NotFoundError
-from ..composition.elasticsearch.query import Query, MatchAll, ValuesQuery
-from ..composition.elasticsearch import HasElasticsearch
-from time import sleep
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
-from collections.abc import Sequence
-from itertools import batched
+
+from process_framework import IGettable, ISettable, Step, ValueOrReference, resolve
+
+from ..composition.elasticsearch import HasElasticsearch
+from ..composition.elasticsearch.query import MatchAll, Query, ValuesQuery
 
 MAX_ALLOWABLE_TERMS = 65536
 
@@ -14,8 +13,8 @@ MAX_ALLOWABLE_TERMS = 65536
 class UpdateByQuery(HasElasticsearch, Step):
     """ perform an update-by-query operation on an index\n
      https://elasticsearch-py.readthedocs.io/en/v8.2.2/api.html?highlight=execute#elasticsearch.Elasticsearch.update_by_query """
-    index:str|Sequence[str]|IGettable[str]|IGettable[Sequence[str]]
-    pipeline:str|IGettable[str]
+    index:ValueOrReference[str]|ValueOrReference[Sequence[str]]
+    pipeline:ValueOrReference[str]|None
     query:dict|Query=field(default_factory=MatchAll)
     wait_for_completion:bool=True
     conflicts:str='abort'
@@ -37,9 +36,10 @@ class UpdateByQuery(HasElasticsearch, Step):
         if isinstance(query, dict):
             return query
         
-        if isinstance(query, ValuesQuery) and len(query.get_values()) >= MAX_ALLOWABLE_TERMS:
-            self._warn(f'length of query values > {MAX_ALLOWABLE_TERMS}, returning match_all')
-            return MatchAll().get_query()
+        if isinstance(query, ValuesQuery) and len(query.get_values()) > MAX_ALLOWABLE_TERMS:
+            raise ValueError(
+                f"Query exceeds maximum of {MAX_ALLOWABLE_TERMS} terms."
+            )
         
         return query.get_query()
     
@@ -47,7 +47,7 @@ class UpdateByQuery(HasElasticsearch, Step):
         return self.index.get_value() if isinstance(self.index, IGettable) else self.index
     
     def get_pipeline(self) -> str|None:
-        return self.pipeline if isinstance(self.pipeline, str) else self.pipeline.get_value()
+        return None if self.pipeline is None else resolve(self.pipeline)
 
     def do(self):
 
