@@ -1,4 +1,4 @@
-from .core import StepMixin
+from ..composition.core import StepMixin
 from requests import Session, Response
 from dataclasses import dataclass, field
 from pydantic import BaseModel

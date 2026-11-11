@@ -11,7 +11,7 @@ from elastic_transport import ObjectApiResponse
 from process_framework import IGettable, ISettable, Step
 from process_framework.context_managers.logging import suppress_logging
 
-from ..composition.elasticsearch import HasElasticsearch
+from .composition import HasElasticsearch
 
 @dataclass(kw_only=True)
 class AwaitTask(HasElasticsearch, Step):

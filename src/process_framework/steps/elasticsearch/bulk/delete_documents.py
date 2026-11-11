@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from process_framework.steps.composition.elasticsearch.actions import DeleteAction
+from process_framework.steps.elasticsearch.composition.actions import DeleteAction
 
 from .core import BulkDocuments
 from typing import Any

@@ -4,7 +4,7 @@ from typing import Iterable
 
 from process_framework import Step, resolve
 from process_framework.steps.composition.core import HasInput
-from process_framework.steps.composition.elasticsearch import (
+from process_framework.steps.elasticsearch.composition import (
     HasElasticsearch,
     HasElasticsearchIndex,
 )

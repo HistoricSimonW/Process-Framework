@@ -7,12 +7,12 @@ from typing import Any, Callable, Sequence, cast
 from elasticsearch.helpers import scan
 
 from process_framework import AssigningStep, resolve
-from process_framework.steps.composition.elasticsearch.core import (
+from process_framework.steps.elasticsearch.composition.core import (
     HasElasticsearchIndex,
 )
 
 from .transformation import Hit, HitsTransformer
-from ..composition.elasticsearch.query import Query
+from .composition.query import Query
 
 @dataclass(kw_only=True)
 class GetScanResult[T](AssigningStep[T], HasElasticsearchIndex):

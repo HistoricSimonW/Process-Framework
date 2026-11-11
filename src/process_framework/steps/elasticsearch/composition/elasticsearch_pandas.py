@@ -1,5 +1,5 @@
 from typing import Iterable, Callable, Any
-from process_framework.steps.composition.elasticsearch.core import Hit
+from process_framework.steps.elasticsearch.composition.core import Hit
 from .core import AssignScanResult
 from pandas import DataFrame
 from pydantic import BaseModel

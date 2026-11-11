@@ -9,7 +9,7 @@ from elasticsearch.helpers import BulkIndexError, streaming_bulk
 from process_framework import Step, resolve
 from process_framework.context_managers.logging import suppress_logging
 from process_framework.steps.composition.core import HasInput, HasOptionalOutput
-from process_framework.steps.composition.elasticsearch.core import (
+from process_framework.steps.elasticsearch.composition.core import (
     HasElasticsearch,
     HasElasticsearchIndex,
 )

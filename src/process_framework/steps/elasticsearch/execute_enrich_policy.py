@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from logging import info
 
 from process_framework import ISettable, Step, ValueOrReference, resolve
-from process_framework.steps.composition.elasticsearch.core import (
+from process_framework.steps.elasticsearch.composition.core import (
     HasElasticsearch,
 )
 

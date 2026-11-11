@@ -4,8 +4,8 @@ from typing import Any
 
 from process_framework import IGettable, ISettable, Step, ValueOrReference, resolve
 
-from ..composition.elasticsearch import HasElasticsearch
-from ..composition.elasticsearch.query import MatchAll, Query, ValuesQuery
+from .composition import HasElasticsearch
+from .composition.query import MatchAll, Query, ValuesQuery
 
 MAX_ALLOWABLE_TERMS = 65536
 

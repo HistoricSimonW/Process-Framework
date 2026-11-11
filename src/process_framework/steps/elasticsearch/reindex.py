@@ -5,8 +5,8 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict
 
 from process_framework import IGettable, ISettable, Step
-from process_framework.steps.composition.elasticsearch import HasElasticsearch
-from process_framework.steps.composition.elasticsearch.query import Query
+from process_framework.steps.elasticsearch.composition import HasElasticsearch
+from process_framework.steps.elasticsearch.composition.query import Query
 
 
 class ReindexArgBase(BaseModel, ABC):

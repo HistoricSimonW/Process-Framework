@@ -1,12 +1,12 @@
-from ..composition.elasticsearch.document import DocumentBase
-from ..composition.elasticsearch.query import (
+from .composition.document import DocumentBase
+from .composition.query import (
     Query, 
     ValuesQuery, 
     Ids, 
     Terms, 
     MatchAll
 )
-from ..composition.elasticsearch.actions import (
+from .composition.actions import (
     IndexAction, 
     UpdateAction, 
     DeleteAction

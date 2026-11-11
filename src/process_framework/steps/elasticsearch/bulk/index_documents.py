@@ -1,8 +1,8 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from process_framework.steps.composition.elasticsearch.actions import IndexAction
-from process_framework.steps.composition.elasticsearch.document import DocumentBase
+from process_framework.steps.elasticsearch.composition.actions import IndexAction
+from process_framework.steps.elasticsearch.composition.document import DocumentBase
 
 from .core import BulkDocuments
 from typing import Any

@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-sql=["pandas", "sqlalchemy", "pyodbc"]
+sql=["pandas", "sqlalchemy", "pyodbc", "inflection"]
 geo=["geopandas"]
 elasticsearch=["elasticsearch"]
 pandas=["pandas"]
