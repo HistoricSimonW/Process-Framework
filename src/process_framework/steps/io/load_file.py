@@ -8,7 +8,9 @@ from pandas import DataFrame
 import pandas as pd
 from typing import Any, Callable
 from io import TextIOWrapper
+from dataclasses import dataclass
 
+@dataclass
 class HasPath(StepMixin):
     path:Path
 
@@ -29,7 +31,7 @@ class LoadFile[T](HasPath, AssigningStep[T]):
             raise Exception(f'Path {self.path} is not a file')
         return super().preflight()
 
-
+@dataclass(kw_only=True)
 class LoadJson[T:(list, dict)](LoadFile[T]):
     loader:Callable[[TextIOWrapper], T] = lambda path: json.load(path)
 
@@ -42,7 +44,7 @@ class LoadJson[T:(list, dict)](LoadFile[T]):
         super().preflight()
         assert 'json' in self.path.suffix
         
-
+@dataclass(kw_only=True)
 class LoadCsvToDataFrame(LoadFile[DataFrame]):
     sep : str = ','
     header : Any
@@ -52,7 +54,7 @@ class LoadCsvToDataFrame(LoadFile[DataFrame]):
         return pd.read_csv(
             self.path,
             sep=self.sep,
-            header=self.header
+            header=self.header,
             **self.read_csv_kwargs
         )
     

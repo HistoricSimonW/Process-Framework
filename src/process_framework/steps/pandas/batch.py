@@ -4,7 +4,7 @@ from pandas import DataFrame
 from typing import Iterable
 
 @dataclass
-class BatchProcessDataFrame(TransformingStep[DataFrame, Iterable[DataFrame]]):
+class GenDataFrameBatches(TransformingStep[DataFrame, Iterable[DataFrame]]):
     batch_size:int
     
     def gen_batches(self, subject: DataFrame) -> Iterable[DataFrame]:

@@ -42,9 +42,9 @@ class GetScanResult[T](AssigningStep[T], HasElasticsearchIndex):
             return query()
         
         if query is None:
-            query = {'match_all':{}}
+            return {'match_all':{}}
             
-        raise ValueError()
+        raise ValueError(f"Unsupported query: {query!r}")
     
     
     def gen_hits(self) -> Generator[Hit]:
