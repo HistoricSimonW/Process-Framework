@@ -12,13 +12,13 @@ from process_framework.steps.composition.elasticsearch.core import (
 )
 
 from .transformation import Hit, HitsTransformer
-
+from ..composition.elasticsearch.query import Query
 
 @dataclass(kw_only=True)
 class GetScanResult[T](AssigningStep[T], HasElasticsearchIndex):
     """Scan an Elasticsearch index and assign its transformed results."""
     hits_func:HitsTransformer[T]
-    query:dict[str, Any]|Callable[[], dict[str, Any]]|None=None
+    query:Query|dict[str, Any]|Callable[[], dict[str, Any]]|None=None
     source:str|Sequence[str]|bool|None=None
     source_includes:str|Sequence[str]|None=None
     source_excludes:str|Sequence[str]|None=None
@@ -30,12 +30,21 @@ class GetScanResult[T](AssigningStep[T], HasElasticsearchIndex):
     
     def get_query(self) -> dict[str, Any]:
         """Resolve the Elasticsearch query, defaulting to match_all."""
-        query = self.query() if callable(self.query) else self.query
+        query = resolve(self.query)
+        
+        if isinstance(query, dict):
+            return query
+        
+        if isinstance(query, Query):
+            return query.get_query()
+        
+        if callable(query):
+            return query()
         
         if query is None:
             query = {'match_all':{}}
             
-        return query
+        raise ValueError()
     
     
     def gen_hits(self) -> Generator[Hit]:

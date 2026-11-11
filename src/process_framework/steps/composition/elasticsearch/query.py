@@ -1,4 +1,4 @@
-from process_framework import IGettable
+from process_framework import ValueOrReference, resolve
 from typing import Sequence
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -15,14 +15,10 @@ class Query(ABC):
 @dataclass(kw_only=True)
 class ValuesQuery(Query, ABC):
     """Base class for queries that operate on a sequence of values."""
-    values:IGettable[Sequence]|Sequence
+    values:ValueOrReference[Sequence]|Sequence
 
     def get_values(self) -> list:
-        values = self.values
-
-        if isinstance(values, IGettable):
-            values = values.get_value()
-        
+        values = resolve(self.values)
         return list(values)
 
 
