@@ -6,7 +6,7 @@ import logging
 
 from elasticsearch.helpers import BulkIndexError, bulk, streaming_bulk
 
-from process_framework import Step
+from process_framework import Step, resolve
 from process_framework.steps.composition.core import (
     HasInput,
     HasOptionalOutput,
@@ -63,7 +63,7 @@ class IndexDocuments(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[
     
 
     def do(self):
-        docs = self.input_.get_value()
+        docs = resolve(self.input_)
         actions = IndexAction.from_documents(docs, resolve(self.index))
         kwargs = self.get_bulk_kwargs()
         self._info(f"Indexing documents into {self.index} with pipeline={self.pipeline!r}")

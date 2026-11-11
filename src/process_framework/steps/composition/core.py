@@ -4,6 +4,8 @@ from ...lifecycle.preflight import Preflightable
 from ...references.composition.core import IGettable, ISettable, ITyped
 from ...references.reference import Reference
 from ...composition.retries import RetryArgs
+from ....process_framework import ValueOrReference
+
 
 class IGenerateValue[T](ABC):
     """interface for producing a value."""
@@ -30,7 +32,7 @@ class StepMixin(Preflightable, ABC):
 @dataclass(kw_only=True)
 class HasInput[T](StepMixin):
     """mixin providing an input value source."""
-    input_:IGettable[T]
+    input_:ValueOrReference[T]
    
 
 @dataclass(kw_only=True)
@@ -42,9 +44,3 @@ class HasOptionalOutput[T](StepMixin):
 class HasOutput[T](StepMixin):
     """mixin providing an output value sink."""
     output_ : ISettable[T]
-
-
-@dataclass
-class HasReference[T](StepMixin):
-    """mixin providing a generic reference."""
-    reference : Reference[T]

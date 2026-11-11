@@ -22,10 +22,13 @@ class RetryArgs(BaseModel):
         """build the tenacity wait strategy from settings."""
         if self.wait_seconds is None:
             return None
+        
         if self.wait_exponent is None:
             return wait_fixed(self.wait_seconds)
+        
         if self.wait_jitter is None:
             return wait_exponential(multiplier=self.wait_seconds, exp_base=self.wait_exponent)
+        
         return wait_exponential_jitter(initial=self.wait_seconds, exp_base=self.wait_exponent, jitter=self.wait_jitter)
 
 
@@ -52,21 +55,28 @@ class RetryArgs(BaseModel):
 
         return before
 
+
     def get_retry_error_callback(self):
         """build an exhausted-retry logging callback."""
         error_level = self.log_error_level
         if error_level is None:
             return None
 
-        def on_error(state: RetryCallState) -> Any:
+        def on_error(state: RetryCallState) -> None:
+            """Log exhausted retries and re-raise the final exception."""
             exc = state.outcome.exception() if state.outcome else None
+
             logging.log(
                 error_level,
                 "retries exhausted after %s attempts: %s",
                 state.attempt_number,
                 exc,
             )
-            return None
+
+            if exc is not None:
+                raise exc
+
+            raise RuntimeError("Retries exhausted without an exception.")
 
         return on_error
 
@@ -91,3 +101,10 @@ class RetryArgs(BaseModel):
     def wrap(self, func:Callable[P, R]) -> Callable[P, R]:
         """wrap a callable with the configured retry policy."""
         return self.get_retry()(func)
+    
+    
+def wrap(retries:RetryArgs|None, func:Callable[P, R]) -> Callable[P, R]:
+    """Apply an optional retry policy to a callable."""
+    if retries is None:
+        return func
+    return retries.wrap(func)

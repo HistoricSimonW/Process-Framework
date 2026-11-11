@@ -1,4 +1,4 @@
-from process_framework import Step, Reference
+from process_framework import Step, Reference, resolve
 from pandas import Series
 from elasticsearch.client import Elasticsearch
 from elasticsearch.helpers import bulk
@@ -23,7 +23,7 @@ class DeleteById(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable[str]
 
 
     def do(self):
-        _ids = self.input_.get_value()
+        _ids = resolve(self.input_)
 
         assert isinstance(_ids, Iterable)
 

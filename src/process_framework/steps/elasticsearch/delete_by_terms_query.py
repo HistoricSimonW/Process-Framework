@@ -1,4 +1,4 @@
-from process_framework import Step, Reference
+from process_framework import Step, Reference, resolve
 from elasticsearch.client import Elasticsearch
 from typing import Any
 from typing import Iterable
@@ -18,7 +18,7 @@ class DeleteByTerms(HasElasticsearchIndex, HasElasticsearch, HasInput[Iterable],
 
 
     def do(self):
-        terms = self.input_.get_value()
+        terms = resolve(self.input_)
         batches = batched(terms, self.batch_size)
         self._info('performing `delete_by_query` with a terms query')
         for i, batch in enumerate(batches):

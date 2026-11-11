@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, KW_ONLY
 from ..lifecycle.preflight import Preflightable
 from .composition.core import IGenerateValue, ITransformValue, HasOutput, HasInput
+from ...process_framework import resolve
+
 
 @dataclass
 class Step(Preflightable, ABC):
@@ -30,7 +32,8 @@ class AssigningStep[T](Step, HasOutput[T], IGenerateValue[T]):
 class TransformingStep[TIn, TOut](AssigningStep[TOut], HasInput[TIn], ITransformValue[TIn, TOut]):
     """step that generates output by transforming its input."""
     def generate_value(self) -> TOut | None:
-        return self.transform_value(self.input_.get_value())
+        value = resolve(self.input_)
+        return self.transform_value(value)
 
     @abstractmethod
     def transform_value(self, input_: TIn) -> TOut:

@@ -8,7 +8,7 @@ from process_framework import Step, ClientsBase, ReferencesBase, SettingsBase, P
 from typing import NamedTuple
 
 @dataclass(kw_only=True)
-class SubpipelineDefinitionBase[
+class SubprocessDefinitionBase[
         TSettings:SettingsBase,
         TReferences:ReferencesBase,
         TContext,
@@ -55,7 +55,7 @@ if __name__ == '__main__':
         output_:ISettable[str]
         
     @dataclass
-    class _UpperCaserDefinition(SubpipelineDefinitionBase[SettingsBase,_UpperCaserReferences, _UpperCaserContext , ClientsBase]):
+    class _UpperCaserDefinition(SubprocessDefinitionBase[SettingsBase,_UpperCaserReferences, _UpperCaserContext , ClientsBase]):
         def initialize_references(self, context: _UpperCaserContext) -> _UpperCaserReferences:
             return _UpperCaserReferences(
                 in_=Reference(str, context.input_),
