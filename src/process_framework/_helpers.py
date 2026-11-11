@@ -1,5 +1,7 @@
 from process_framework import Step
 
+# Some helper funcs, useful when testing pipeline components in .ipynbs
+
 def perform_preflight(*steps:Step) -> None:
     """Run preflight checks for each step."""
     for step in steps:
