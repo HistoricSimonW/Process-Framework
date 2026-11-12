@@ -2,7 +2,6 @@ from pydantic import BaseModel
 from typing import Annotated
 from abc import ABC
 from dataclasses import dataclass
-from abc import ABC
 
 @dataclass
 class Masked:

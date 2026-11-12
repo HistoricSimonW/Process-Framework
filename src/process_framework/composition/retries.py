@@ -10,7 +10,7 @@ R = TypeVar("R")
 
 class RetryArgs(BaseModel):
     """configuration for constructing a tenacity retry policy."""
-    attempts:int=0
+    attempts:int=1
     wait_seconds:int|None=None
     wait_exponent:int|None=None
     wait_jitter:float|None=None

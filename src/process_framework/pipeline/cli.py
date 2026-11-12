@@ -22,8 +22,8 @@ from typing import Sequence
 import logging
 import sys
 
-from process_framework.pipeline import PipelineDefinitionBase
-from process_framework.pipeline.settings import CliArg, SettingsBase
+from .pipeline import PipelineDefinitionBase
+from .settings import CliArg, SettingsBase
 
 class EnvironmentSettings(SettingsBase):
     """Settings for the local pipeline runner."""

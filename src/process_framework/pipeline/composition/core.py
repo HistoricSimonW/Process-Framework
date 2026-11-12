@@ -4,7 +4,6 @@ from typing import Annotated
 from abc import ABC
 from dataclasses import dataclass, fields
 from argparse import BooleanOptionalAction
-from abc import ABC
 
 class CrudArgs(BaseModel):
     """ creations, updates, deletions, with CliArgs """

@@ -8,7 +8,7 @@ from .composition.core import (
     IGenerateValue,
     ITransformValue,
 )
-from ...process_framework import resolve
+from ..references.composition.core import resolve
 
 
 @dataclass(kw_only=True)

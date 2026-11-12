@@ -1,9 +1,9 @@
 # stdlib
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Self
 from .composition.core import ContainerBase
 from .settings import SettingsBase
-from typing import Self
 
 @dataclass
 class ClientsBase[TSettings:SettingsBase](ContainerBase, ABC):

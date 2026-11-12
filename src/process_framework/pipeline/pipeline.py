@@ -15,19 +15,32 @@
 from abc import abstractmethod, ABC
 from typing import Self
 from dataclasses import dataclass
+from collections.abc import Generator
 
 # first-party (process_framework / process)
 from ..steps import Step
-from .clients import ClientsBase
-from .references import ReferencesBase
-from .settings import SettingsBase
 from ..exceptions import EarlyEscape
 from ..composition.core import HasLogger
+from .clients import ClientsBase
+from .settings import SettingsBase
+from .composition.core import ContainerBase
+
+
+@dataclass(kw_only=True)
+class PipelineReferencesBase(ContainerBase, ABC):
+    """base class for reference containers holding pipeline state."""
+    
+    @classmethod
+    @abstractmethod
+    def initialize(cls) -> Self:
+        """Construct a typed collection of References"""
+        ...
+
 
 @dataclass(kw_only=True)
 class PipelineDefinitionBase[
         TSettings:SettingsBase,
-        TReferences:ReferencesBase,
+        TReferences:PipelineReferencesBase,
         TClients:ClientsBase
     ](ABC):
     """Construct a pipeline from settings, references, and clients.\n
@@ -45,7 +58,7 @@ class PipelineDefinitionBase[
 
     @classmethod
     @abstractmethod
-    def initialize_references(cls) -> TReferences:
+    def get_references_type(cls) -> type[TReferences]:
         ...
 
     @classmethod
@@ -59,11 +72,10 @@ class PipelineDefinitionBase[
         settings = cls.get_settings_type().from_environment(argsv, **kwargs)
         return cls.from_settings(settings)
     
-    
     @classmethod
     def from_settings(cls, settings:TSettings) -> Self:
         clients = cls.get_clients_type().initialize(settings=settings)
-        references = cls.initialize_references()
+        references = cls.get_references_type().initialize()
 
         return cls(
             settings=settings,
@@ -71,11 +83,15 @@ class PipelineDefinitionBase[
             clients=clients
         )
         
-
     @abstractmethod
-    def instantiate_steps(self) -> list[Step]:
-        """Construct the ordered steps for this pipeline."""
+    def generate_steps(self) -> Generator[Step]:
+        """Generate the ordered steps for this pipeline."""
         ...
+        
+
+    def instantiate_steps(self) -> list[Step]:
+        """Materialize steps for this pipeline."""
+        return list(self.generate_steps())
 
 
     def instantiate_pipeline(self) -> 'Pipeline':

@@ -96,7 +96,5 @@ class SettingsBase(BaseSettings):
         init_kwargs = {'_env_file':env_file} if env_file else {}
 
         return cls(
-            **init_kwargs, 
-            **cli_overrides,
-            **overrides,    
+            **(init_kwargs | cli_overrides | overrides),    
         )

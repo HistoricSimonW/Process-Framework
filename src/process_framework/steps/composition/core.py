@@ -4,7 +4,7 @@ from ...lifecycle.preflight import Preflightable
 from ...references.composition.core import IGettable, ISettable, ITyped
 from ...references.reference import Reference
 from ...composition.retries import RetryArgs
-from ....process_framework import ValueOrReference
+from ...references.composition.core import ValueOrReference
 
 
 class IGenerateValue[T](ABC):

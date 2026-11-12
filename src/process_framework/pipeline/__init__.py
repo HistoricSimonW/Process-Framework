@@ -1,5 +1,12 @@
-from .clients import ClientsBase
-from .references import ReferencesBase
-from .settings import SettingsBase
-from .pipeline import Pipeline, PipelineDefinitionBase
 from .cli import EnvironmentSettings, Runner
+from .clients import ClientsBase, EmptyClients
+from .pipeline import (
+    Pipeline,
+    PipelineDefinitionBase,
+    PipelineReferencesBase,
+)
+from .settings import SettingsBase
+from .subprocess import (
+    SubprocessDefinitionBase,
+    SubprocessReferencesBase,
+)
