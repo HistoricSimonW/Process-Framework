@@ -110,4 +110,6 @@ class Runner:
             fh.setFormatter(format)
             logger.addHandler(fh)
 
-        return logger    
+        return logger
+    
+    

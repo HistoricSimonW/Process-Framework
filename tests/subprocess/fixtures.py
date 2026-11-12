@@ -1,13 +1,18 @@
-
 from dataclasses import dataclass
 from typing import NamedTuple, Self
 
-from process_framework import Reference, Step
-from process_framework.pipeline import SettingsBase
+from process_framework import (
+    IGettable,
+    ISettable,
+    ModifyingStep,
+    Reference,
+    Step,
+)
 from process_framework.pipeline import (
+    ClientsBase,
+    SettingsBase,
     SubprocessDefinitionBase,
     SubprocessReferencesBase,
-    SettingsBase,
 )
 from process_framework.pipeline.clients import EmptyClients
 
@@ -75,3 +80,38 @@ def make_definition() -> SubprocessDefinition:
         settings=settings,
         clients=EmptyClients.initialize(settings),
     )
+
+
+class _UpperCase(ModifyingStep[str]):
+    def transform_value(self, input_: str) -> str:
+        return input_.upper()
+    
+class _UpperCaserContext(NamedTuple):
+    input_:str
+    output_:ISettable[str]
+    
+@dataclass(kw_only=True)
+class _UpperCaserReferences(SubprocessReferencesBase[_UpperCaserContext]):
+    in_:IGettable[str]
+    out_:ISettable[str]
+    
+    @classmethod
+    def initialize(cls, context: _UpperCaserContext) -> Self:
+        return cls(
+            in_=Reference(str, context.input_),
+            out_=context.output_
+        )
+        
+@dataclass
+class _UpperCaserDefinition(SubprocessDefinitionBase[SettingsBase,_UpperCaserReferences, ClientsBase, _UpperCaserContext]):
+    def get_references_type(self) -> type[_UpperCaserReferences]:
+        return _UpperCaserReferences
+    
+    def instantiate_steps(self, references: _UpperCaserReferences) -> list[Step]:
+        return [
+            _UpperCase(
+                input_=references.in_,
+                output_=references.out_
+            )
+        ]
+    
