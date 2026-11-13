@@ -1,8 +1,8 @@
 from collections.abc import Callable, Iterable, Sequence
 from functools import partial
-from typing import Any, Literal
 
-from pandas import Series
+from pandas import DataFrame, Series
+from typing import Iterable, Sequence, Callable, Mapping, Any,  Literal
 
 type Hit = dict[str, Any]
 type Hits = Iterable[Hit]
@@ -86,4 +86,86 @@ def get_value_series[T](hits:Hits, field:str, source_or_fields:FieldLocation = '
         hits,
         value_func=value_func,
         id_func=id_func
+    )
+    
+
+def as_value_series[T](
+    field: str,
+    source_or_fields: FieldLocation = "_source",
+    value_transformer: Callable[[Any], T] | None = None,
+    id_func: Callable[[Hit], str] = get_id,
+) -> HitsTransformer[Series]:
+    """Return a transformer that extracts a Series from Elasticsearch hits."""
+    return partial(
+        get_value_series,
+        field=field,
+        source_or_fields=source_or_fields,
+        value_transformer=value_transformer,
+        id_func=id_func,
+    )
+    
+    
+def flatten_hit(hit:Hit) -> dict:
+    """Flatten an Elasticsearch hit, including source, fields, and metadata."""
+    hit = dict(hit)
+    record = hit.pop("_source", {}) or {}
+    fields = hit.pop("fields", {}) or {}
+    return record | fields | hit
+
+
+def dataframe_from_hits(
+    hits: Iterable[Hit],
+    index: str | Sequence[str] | None = "_id",
+    dtype: Mapping[str, Any] | None = None,
+    drop_cols: Sequence[str] | None = None,
+    renames: Mapping[str, str] | Callable[[str], str] | None = None,
+    fillna: Mapping[str, Any] | None = None,
+    explode: str | Sequence[str] | None = None,
+    **assign: Callable[[DataFrame], Series],
+) -> DataFrame:
+    """Convert Elasticsearch hits to a DataFrame with optional transformations."""
+    df = DataFrame.from_records(map(flatten_hit, hits))
+
+    df = df.assign(**assign)
+
+    if explode is not None:
+        df = df.explode(explode)
+
+    if fillna is not None:
+        df = df.fillna(fillna) #type: ignore
+
+    if index is not None:
+        df = df.set_index(index)
+
+    if dtype is not None:
+        df = df.astype(dtype)
+
+    if drop_cols is not None:
+        df = df.drop(columns=drop_cols)
+
+    if renames is not None:
+        df = df.rename(columns=renames)
+
+    return df
+
+
+
+def as_dataframe(
+    index: str | Sequence[str] | None = "_id",
+    dtype: Mapping[str, Any] | None = None,
+    drop_cols: Sequence[str] | None = None,
+    renames: Mapping[str, str] | Callable[[str], str] | None = None,
+    fillna: Mapping[str, Any] | None = None,
+    explode: str | Sequence[str] | None = None,
+    **assign: Callable[[DataFrame], Series]) -> HitsTransformer[DataFrame]:
+    """Return a transformer that converts Elasticsearch hits to a DataFrame."""
+    return partial(
+        dataframe_from_hits, 
+        index=index,
+        dtype=dtype,
+        drop_cols=drop_cols,
+        renames=renames,
+        fillna=fillna,
+        explode=explode,
+        **assign,
     )
