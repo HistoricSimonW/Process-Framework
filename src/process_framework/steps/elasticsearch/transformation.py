@@ -114,13 +114,14 @@ def flatten_hit(hit:Hit) -> dict:
 
 
 def dataframe_from_hits(
-    hits: Iterable[Hit],
+    hits: Iterable[Hit],*,
     index: str | Sequence[str] | None = "_id",
     dtype: Mapping[str, Any] | None = None,
     drop_cols: Sequence[str] | None = None,
     renames: Mapping[str, str] | Callable[[str], str] | None = None,
     fillna: Mapping[str, Any] | None = None,
     explode: str | Sequence[str] | None = None,
+    transform: Callable[[DataFrame], DataFrame] | None = None,
     **assign: Callable[[DataFrame], Series],
 ) -> DataFrame:
     """Convert Elasticsearch hits to a DataFrame with optional transformations."""
@@ -146,17 +147,21 @@ def dataframe_from_hits(
     if renames is not None:
         df = df.rename(columns=renames)
 
+    if transform is not None:
+        df = transform(df)
+        
     return df
 
 
 
-def as_dataframe(
+def as_dataframe(*,
     index: str | Sequence[str] | None = "_id",
     dtype: Mapping[str, Any] | None = None,
     drop_cols: Sequence[str] | None = None,
     renames: Mapping[str, str] | Callable[[str], str] | None = None,
     fillna: Mapping[str, Any] | None = None,
     explode: str | Sequence[str] | None = None,
+    transform: Callable[[DataFrame], DataFrame] | None = None,
     **assign: Callable[[DataFrame], Series]) -> HitsTransformer[DataFrame]:
     """Return a transformer that converts Elasticsearch hits to a DataFrame."""
     return partial(
@@ -167,5 +172,6 @@ def as_dataframe(
         renames=renames,
         fillna=fillna,
         explode=explode,
+        transform=transform,
         **assign,
     )
