@@ -24,19 +24,17 @@ def _normalize_row_func(row_func:Callable, with_id:bool) -> Callable[[Any, Serie
     return lambda _, row: row_func(row)
 
     
-def transform_rows[TValue, TOut](df:DataFrame, row_func:RowFunc[TValue], result_func:Callable[[dict[Any, TValue]], TOut], with_id:bool = False) -> TOut:
+def transform_rows[TValue, TOut](df:DataFrame, row_func:RowFunc[TValue], result_func:Callable[[Series], TOut], with_id:bool = False) -> TOut:
     """Transform DataFrame rows and construct the result."""
     func = _normalize_row_func(row_func, with_id)
-     
-    rows = {
-        i: func(i, row)
-        for i, row in df.iterrows()
-    }
+    
+    index = list(df.index)
+    values = [func(i, row) for i, row in df.iterrows()]
         
-    return result_func(rows)
+    return result_func(Series(data=values, index=index))
         
 
-def as_rows[TValue, TOut](row_func: RowFunc[TValue], result_func: Callable[[dict[Any, TValue]], TOut], with_id: bool = False, ) -> DataFrameTransformer[TOut]:
+def as_rows[TValue, TOut](row_func: RowFunc[TValue], result_func: Callable[[Series], TOut], with_id: bool = False, ) -> DataFrameTransformer[TOut]:
     """Return a DataFrame transformer that applies a function to each row."""
     return partial(
         transform_rows,
