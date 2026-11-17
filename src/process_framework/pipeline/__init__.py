@@ -10,3 +10,6 @@ from .subprocess import (
     SubprocessDefinitionBase,
     SubprocessReferencesBase,
 )
+from .script import (
+    ScriptBase
+)
