@@ -22,6 +22,7 @@ from typing import Sequence
 import logging
 import sys
 
+from .script import ScriptBase
 from .pipeline import PipelineDefinitionBase
 from .settings import CliArg, SettingsBase
 
@@ -47,7 +48,7 @@ class EnvironmentSettings(SettingsBase):
 @dataclass(kw_only=True)
 class Runner:
     """Run a pipeline definition from environment and CLI settings."""
-    definition:type[PipelineDefinitionBase]
+    definition:type[PipelineDefinitionBase|ScriptBase]
     environment_settings:type[EnvironmentSettings] = EnvironmentSettings
 
     def run(self, argsv: Sequence[str] | None = None, **kwargs) -> int:
@@ -61,13 +62,26 @@ class Runner:
         
         # construct a definition from the environment
         definition = self.definition.from_environment(argsv=argsv, **kwargs)
+        
+        if isinstance(definition, PipelineDefinitionBase):
+            # if definition is a Pipeline Definition,
+            #   create an instance of the pipeline,
+            #   perform logging and preflight
+            #   then execute the pipeline
+            pipeline = definition.instantiate_pipeline()
 
-        pipeline = definition.instantiate_pipeline()
+            pipeline.log_steps()
+            pipeline.preflight()
+            pipeline.do()
 
-        pipeline.log_steps()
-        pipeline.preflight()
-        pipeline.do()
-
+        elif isinstance(definition, ScriptBase):
+            # if definition is a Script
+            #   execute the script
+            definition.do()
+        
+        else:
+            raise TypeError(f"Unsupported definition: {type(definition).__name__}")
+        
         return 0
 
 

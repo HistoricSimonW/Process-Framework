@@ -12,6 +12,18 @@ from process_framework import PipelineDefinitionBase
 from process_framework.pipeline.cli import EnvironmentSettings, Runner
 
 
+from unittest.mock import MagicMock, call, patch
+
+from process_framework.pipeline import Pipeline
+from process_framework.pipeline.script import ScriptBase
+
+from .fixtures import (
+    PipelineDefinition,
+    PipelineSettings,
+    ScriptDefinition,
+)
+
+
 # ----------------------------------------
 # Fixtures
 # ----------------------------------------
@@ -184,88 +196,136 @@ def test_configure_logging_replaces_handlers(
 # Runner: execution
 # ----------------------------------------
 
-def test_runner_execution(
-    mock_definition: MagicMock,
-    mock_env_type: MagicMock,
+@pytest.fixture
+def mock_runner_environment() -> MagicMock:
+    return MagicMock(spec=EnvironmentSettings)
+
+
+def test_runner_pipeline_execution(
+    mock_runner_environment: MagicMock,
 ):
+    definition = PipelineDefinition.from_settings(
+        PipelineSettings(name="hello")
+    )
+    pipeline = MagicMock(spec=Pipeline)
+
     runner = Runner(
-        definition=cast(type[PipelineDefinitionBase], mock_definition),
-        environment_settings=cast(type[EnvironmentSettings], mock_env_type),
+        definition=PipelineDefinition,
+        environment_settings=cast(
+            type[EnvironmentSettings],
+            mock_runner_environment,
+        ),
     )
     runner.configure_logging = MagicMock()
 
-    result = runner.run(argsv=[])
+    with (
+        patch.object(
+            PipelineDefinition,
+            "from_environment",
+            return_value=definition,
+        ) as construct,
+        patch.object(
+            definition,
+            "instantiate_pipeline",
+            return_value=pipeline,
+        ),
+    ):
+        result = runner.run(argsv=[])
 
     assert result == 0
+    construct.assert_called_once_with(argsv=[])
+    pipeline.log_steps.assert_called_once_with()
+    pipeline.preflight.assert_called_once_with()
+    pipeline.do.assert_called_once_with()
 
-    mock_definition.from_environment.assert_called_once_with(
-        argsv=[],
-    )
-
-    pipeline = (
-        mock_definition.from_environment.return_value
-        .instantiate_pipeline.return_value
-    )
-
-    pipeline.log_steps.assert_called_once()
-    pipeline.preflight.assert_called_once()
-    pipeline.do.assert_called_once()
+    assert pipeline.mock_calls == [
+        call.log_steps(),
+        call.preflight(),
+        call.do(),
+    ]
 
 
-def test_runner_argument_forwarding(
-    mock_definition: MagicMock,
-    mock_env_type: MagicMock,
+def test_runner_script_execution(
+    mock_runner_environment: MagicMock,
 ):
+    script = ScriptDefinition.from_settings(
+        PipelineSettings(name="hello")
+    )
+
     runner = Runner(
-        definition=cast(type[PipelineDefinitionBase], mock_definition),
-        environment_settings=cast(type[EnvironmentSettings], mock_env_type),
+        definition=ScriptDefinition,
+        environment_settings=cast(
+            type[EnvironmentSettings],
+            mock_runner_environment,
+        ),
     )
     runner.configure_logging = MagicMock()
 
-    runner.run(
+    with (
+        patch.object(
+            ScriptDefinition,
+            "from_environment",
+            return_value=script,
+        ) as construct,
+        patch.object(script, "do", wraps=script.do) as execute,
+    ):
+        result = runner.run(argsv=[])
+
+    assert result == 0
+    construct.assert_called_once_with(argsv=[])
+    execute.assert_called_once_with()
+    assert script.result == "hello"
+
+
+@pytest.mark.parametrize(
+    "definition_type",
+    [PipelineDefinition, ScriptDefinition],
+)
+def test_runner_argument_forwarding(
+    definition_type,
+    mock_runner_environment: MagicMock,
+):
+    runner = Runner(
+        definition=definition_type,
+        environment_settings=cast(
+            type[EnvironmentSettings],
+            mock_runner_environment,
+        ),
+    )
+    runner.configure_logging = MagicMock()
+
+    instance = definition_type.from_settings(
+        PipelineSettings(name="hello")
+    )
+
+    with patch.object(
+        definition_type,
+        "from_environment",
+        return_value=instance,
+    ) as construct:
+        runner.run(
+            argsv=["--limit", "100"],
+            custom="value",
+        )
+
+    construct.assert_called_once_with(
         argsv=["--limit", "100"],
         custom="value",
     )
-
-    mock_definition.from_environment.assert_called_once_with(
-        argsv=["--limit", "100"],
-        custom="value",
-    )
-
-    mock_env_type.from_environment.assert_called_once_with(
+    mock_runner_environment.from_environment.assert_called_once_with(
         ["--limit", "100"],
         custom="value",
     )
 
 
-def test_runner_propagates_errors(
-    mock_definition: MagicMock,
-    mock_env_type: MagicMock,
-):
-    pipeline = (
-        mock_definition.from_environment.return_value
-        .instantiate_pipeline.return_value
-    )
-    pipeline.do.side_effect = RuntimeError("Pipeline failed")
-
-    runner = Runner(
-        definition=cast(type[PipelineDefinitionBase], mock_definition),
-        environment_settings=cast(type[EnvironmentSettings], mock_env_type),
-    )
-    runner.configure_logging = MagicMock()
-
-    with pytest.raises(RuntimeError, match="Pipeline failed"):
-        runner.run(argsv=[])
-
-    pipeline.log_steps.assert_called_once()
-    pipeline.preflight.assert_called_once()
-    pipeline.do.assert_called_once()
-
-
+@pytest.mark.parametrize(
+    "definition_type",
+    [PipelineDefinition, ScriptDefinition],
+)
 def test_runner_uses_sys_argv(
     monkeypatch: pytest.MonkeyPatch,
-    mock_definition: MagicMock,
-    mock_env_type: MagicMock,
+    definition_type,
+    mock_runner_environment: MagicMock,
 ):
     monkeypatch.setattr(
         sys,
@@ -274,17 +334,101 @@ def test_runner_uses_sys_argv(
     )
 
     runner = Runner(
-        definition=cast(type[PipelineDefinitionBase], mock_definition),
-        environment_settings=cast(type[EnvironmentSettings], mock_env_type),
+        definition=definition_type,
+        environment_settings=cast(
+            type[EnvironmentSettings],
+            mock_runner_environment,
+        ),
     )
     runner.configure_logging = MagicMock()
 
-    runner.run()
+    instance = definition_type.from_settings(
+        PipelineSettings(name="hello")
+    )
 
-    mock_env_type.from_environment.assert_called_once_with(
+    with patch.object(
+        definition_type,
+        "from_environment",
+        return_value=instance,
+    ) as construct:
+        runner.run()
+
+    construct.assert_called_once_with(
+        argsv=["--log-console", "-vv"],
+    )
+    mock_runner_environment.from_environment.assert_called_once_with(
         ["--log-console", "-vv"],
     )
 
-    mock_definition.from_environment.assert_called_once_with(
-        argsv=["--log-console", "-vv"],
+
+@pytest.mark.parametrize(
+    "definition_type",
+    [PipelineDefinition, ScriptDefinition],
+)
+def test_runner_propagates_errors(
+    definition_type,
+    mock_runner_environment: MagicMock,
+):
+    instance = definition_type.from_settings(
+        PipelineSettings(name="hello")
     )
+
+    runner = Runner(
+        definition=definition_type,
+        environment_settings=cast(
+            type[EnvironmentSettings],
+            mock_runner_environment,
+        ),
+    )
+    runner.configure_logging = MagicMock()
+
+    if isinstance(instance, PipelineDefinitionBase):
+        pipeline = MagicMock(spec=Pipeline)
+        pipeline.do.side_effect = RuntimeError("Execution failed")
+        execution_patch = patch.object(
+            instance,
+            "instantiate_pipeline",
+            return_value=pipeline,
+        )
+    else:
+        execution_patch = patch.object(
+            instance,
+            "do",
+            side_effect=RuntimeError("Execution failed"),
+        )
+
+    with (
+        patch.object(
+            definition_type,
+            "from_environment",
+            return_value=instance,
+        ),
+        execution_patch,
+        pytest.raises(RuntimeError, match="Execution failed"),
+    ):
+        runner.run(argsv=[])
+
+
+def test_runner_rejects_unsupported_definition(
+    mock_runner_environment: MagicMock,
+):
+    unsupported = MagicMock()
+    unsupported.from_environment.return_value = object()
+
+    runner = Runner(
+        definition=cast(
+            type[PipelineDefinitionBase | ScriptBase],
+            unsupported,
+        ),
+        environment_settings=cast(
+            type[EnvironmentSettings],
+            mock_runner_environment,
+        ),
+    )
+    runner.configure_logging = MagicMock()
+
+    with pytest.raises(
+        TypeError,
+        match="Unsupported definition: object",
+    ):
+        runner.run(argsv=[])
