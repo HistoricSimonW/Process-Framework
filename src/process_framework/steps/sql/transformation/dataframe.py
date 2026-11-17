@@ -25,13 +25,20 @@ def _normalize_row_func(row_func:Callable, with_id:bool) -> Callable[[Any, Serie
 
     
 def transform_rows[TValue, TOut](df:DataFrame, row_func:RowFunc[TValue], result_func:Callable[[Series], TOut], with_id:bool = False) -> TOut:
-    """Transform DataFrame rows and construct the result."""
+    """Transform DataFrame rows and construct the result. Makes named index levels available to row_func by projecting values into the dataframe."""
     func = _normalize_row_func(row_func, with_id)
     
+    df_with_index = df.assign(**{
+        str(name): df.index.get_level_values(level)
+        for level, name in enumerate(df.index.names)
+        if isinstance(name, (int, str)) and str(name) not in df.columns
+    })
+        
     index = list(df.index)
-    values = [func(i, row) for i, row in df.iterrows()]
+    values = [func(i, row) for i, row in df_with_index.iterrows()]
         
     return result_func(Series(data=values, index=index))
+        
         
 
 def as_rows[TValue, TOut](row_func: RowFunc[TValue], result_func: Callable[[Series], TOut], with_id: bool = False, ) -> DataFrameTransformer[TOut]:
