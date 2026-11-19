@@ -51,6 +51,22 @@ class PipelineDefinitionBase[
     references:TReferences
     clients:TClients
     
+    @property
+    def s(self) -> TSettings:
+        """Shorthand alias for settings."""
+        return self.settings
+    
+    @property
+    def r(self) -> TReferences:
+        """Shorthand alias for references."""
+        return self.references
+    
+    @property
+    def c(self) -> TClients:
+        """Shorthand alias for clients."""
+        return self.clients
+    
+    
     @classmethod
     @abstractmethod
     def get_settings_type(cls) -> type[TSettings]:

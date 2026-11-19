@@ -24,7 +24,17 @@ class ScriptBase[TSettings:SettingsBase, TClients:ClientsBase](ABC):
     """Execute an imperative operation using configured settings and clients."""
     settings: TSettings
     clients: TClients
+    
+    @property
+    def s(self) -> TSettings:
+        """Shorthand alias for settings."""
+        return self.settings
 
+    @property
+    def c(self) -> TClients:
+        """Shorthand alias for clients."""
+        return self.clients
+    
     @classmethod
     @abstractmethod
     def get_settings_type(cls) -> type[TSettings]:
